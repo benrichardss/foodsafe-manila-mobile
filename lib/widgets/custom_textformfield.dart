@@ -72,7 +72,7 @@ class CustomTextformfield extends StatelessWidget {
             ? IconButton(
                 icon: Icon(
                   isObscure ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+                  color: isObscure ? Colors.grey : Color(0xFF343341),
                 ),
                 onPressed: toggleIcon,
               )
