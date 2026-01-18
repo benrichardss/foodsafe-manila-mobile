@@ -41,11 +41,12 @@ class _LogInScreenState extends State<LoginScreen> {
                       'FoodSafe',
                       style: GoogleFonts.inter(
                         fontSize: ScreenUtil().setSp(15),
-                        fontWeight: FontWeight.w800,  
+                        fontWeight: FontWeight.w800,
                         color: Colors.black,
                       ),
                     ),
-                    Icon(Icons.location_on_outlined,
+                    Icon(
+                      Icons.location_on_outlined,
                       size: ScreenUtil().setSp(25),
                       color: Colors.black,
                     ),
@@ -63,33 +64,33 @@ class _LogInScreenState extends State<LoginScreen> {
                             fontSize: ScreenUtil().setSp(25),
                             fontWeight: FontWeight.w800,
                             color: Colors.black,
-                          )
+                          ),
                         ),
                         Text(
                           'I\'m waiting for you, please enter your detail',
                           style: GoogleFonts.inter(
                             fontSize: ScreenUtil().setSp(12),
                             color: Colors.black,
-                          )
+                          ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
-                SizedBox(height: ScreenUtil().setHeight(50)),
+                SizedBox(height: ScreenUtil().setHeight(40)),
                 TextFormField(
                   decoration: InputDecoration(
-                    hintText: 'Username, Email, or Phone',
-                    hintStyle: GoogleFonts.inter(
+                    labelText: 'Username, Email, or Phone',
+                    labelStyle: GoogleFonts.inter(
                       color: Colors.grey,
                       fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400
+                      fontWeight: FontWeight.w400,
                     ),
                     contentPadding: EdgeInsets.fromLTRB(
-                      0, 
-                      ScreenUtil().setHeight(10), 
-                      ScreenUtil().setWidth(10), 
+                      0,
+                      ScreenUtil().setHeight(10),
                       ScreenUtil().setWidth(10),
+                      0
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey, width: 2),
@@ -107,7 +108,7 @@ class _LogInScreenState extends State<LoginScreen> {
                   ),
                   controller: usernameController,
                   validator: (value) =>
-                      value!.isEmpty ? 'Enter username, email, or phone' : null,
+                      value!.isEmpty ? 'Enter username, email, or phone number' : null,
                   onSaved: (value) => usernameController.text = value!,
                   style: TextStyle(
                     fontSize: ScreenUtil().setSp(15),
@@ -119,17 +120,17 @@ class _LogInScreenState extends State<LoginScreen> {
                 SizedBox(height: ScreenUtil().setHeight(10)),
                 TextFormField(
                   decoration: InputDecoration(
-                    hintText: 'Password',
-                    hintStyle: GoogleFonts.inter(
+                    labelText: 'Password',
+                    labelStyle: GoogleFonts.inter(
                       color: Colors.grey,
                       fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400
+                      fontWeight: FontWeight.w400,
                     ),
                     contentPadding: EdgeInsets.fromLTRB(
-                      0, 
-                      ScreenUtil().setHeight(10), 
-                      ScreenUtil().setWidth(10), 
+                      0,
+                      ScreenUtil().setHeight(10),
                       ScreenUtil().setWidth(10),
+                      0
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey, width: 2),
@@ -146,8 +147,12 @@ class _LogInScreenState extends State<LoginScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        color: _obscurePassword ? Colors.grey : Color(0xFF343341),
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: _obscurePassword
+                            ? Colors.grey
+                            : Color(0xFF343341),
                       ),
                       onPressed: () {
                         setState(() {
@@ -199,10 +204,13 @@ class _LogInScreenState extends State<LoginScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => const ForgotPasswordScreen()
-                        ));
-                      }, 
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -211,13 +219,14 @@ class _LogInScreenState extends State<LoginScreen> {
                           vertical: -4.0,
                         ),
                       ),
-                      child: Text(  
+                      child: Text(
                         'Forgot Password?',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: ScreenUtil().setSp(12),
+                          decoration: TextDecoration.underline,
                         ),
-                      )
+                      ),
                     ),
                   ],
                 ),
@@ -235,23 +244,22 @@ class _LogInScreenState extends State<LoginScreen> {
                     backgroundColor: Color(0xFF343341),
                     foregroundColor: Colors.white,
                     minimumSize: Size(
-                      ScreenUtil().screenWidth, 
-                      ScreenUtil().setHeight(20)
+                      ScreenUtil().screenWidth,
+                      ScreenUtil().setHeight(20),
                     ),
                     textStyle: TextStyle(
                       fontSize: ScreenUtil().setSp(12),
                       fontWeight: FontWeight.w800,
                     ),
-                  ), 
-                  child: 
-                  Text('Log in'),
+                  ),
+                  child: Text('Log in'),
                 ),
                 const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                    'Don\'t have an account? ',
+                      'Don\'t have an account? ',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: ScreenUtil().setSp(12),
@@ -260,7 +268,7 @@ class _LogInScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () {
                         Navigator.popAndPushNamed(context, '/signup');
-                      }, 
+                      },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -269,14 +277,15 @@ class _LogInScreenState extends State<LoginScreen> {
                           vertical: -4.0,
                         ),
                       ),
-                      child: Text(  
+                      child: Text(
                         'Sign Up',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: ScreenUtil().setSp(12),
-                          fontWeight: FontWeight.bold
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
                         ),
-                      )
+                      ),
                     ),
                   ],
                 ),

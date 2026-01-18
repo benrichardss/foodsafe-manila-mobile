@@ -71,7 +71,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ],
                 ),
                 
-                SizedBox(height: ScreenUtil().setHeight(50)),
+                SizedBox(height: ScreenUtil().setHeight(49)),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -103,11 +103,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: ScreenUtil().setHeight(30)),
+                SizedBox(height: ScreenUtil().setHeight(34)),
                 TextFormField(
                   decoration: InputDecoration(
-                    hintText: 'Username, Email, or Phone',
-                    hintStyle: GoogleFonts.inter(
+                    labelText: 'Username, Email, or Phone',
+                    labelStyle: GoogleFonts.inter(
                       color: Colors.grey,
                       fontSize: ScreenUtil().setSp(12),
                       fontWeight: FontWeight.w400
@@ -116,7 +116,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       0, 
                       ScreenUtil().setHeight(10), 
                       ScreenUtil().setWidth(10), 
-                      ScreenUtil().setWidth(10),
+                      0
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey, width: 2),
@@ -196,7 +196,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: ScreenUtil().setSp(12),
-                          fontWeight: FontWeight.bold
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
                         ),
                       )
                     ),
