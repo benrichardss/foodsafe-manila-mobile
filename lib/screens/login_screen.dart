@@ -90,7 +90,7 @@ class _LogInScreenState extends State<LoginScreen> {
                       0,
                       ScreenUtil().setHeight(10),
                       ScreenUtil().setWidth(10),
-                      0
+                      0,
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey, width: 2),
@@ -107,8 +107,9 @@ class _LogInScreenState extends State<LoginScreen> {
                     ),
                   ),
                   controller: usernameController,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Enter username, email, or phone number' : null,
+                  validator: (value) => value!.isEmpty
+                      ? 'Enter username, email, or phone number'
+                      : null,
                   onSaved: (value) => usernameController.text = value!,
                   style: TextStyle(
                     fontSize: ScreenUtil().setSp(15),
@@ -130,7 +131,7 @@ class _LogInScreenState extends State<LoginScreen> {
                       0,
                       ScreenUtil().setHeight(10),
                       ScreenUtil().setWidth(10),
-                      0
+                      0,
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey, width: 2),
@@ -235,6 +236,7 @@ class _LogInScreenState extends State<LoginScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
+                      Navigator.popAndPushNamed(context, '/page');
                     }
                   },
                   style: TextButton.styleFrom(

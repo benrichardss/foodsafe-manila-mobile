@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
-import 'screens/forgotpassword_screen.dart';
+import '../screens/page_screen.dart';
+import '../screens/login_screen.dart';
+import '../screens/signup_screen.dart';
+import '../screens/forgotpassword_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -14,9 +15,9 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(375, 812),
       builder: (context, child) {
         return MaterialApp(
+          
           debugShowCheckedModeBanner: false,
           initialRoute: '/login',
           home: const LoginScreen(),
@@ -24,6 +25,7 @@ class MainApp extends StatelessWidget {
             '/login': (context) => const LoginScreen(),
             '/signup': (context) => const SignupScreen(),
             '/forgot_password': (context) => const ForgotPasswordScreen(),
+            '/page': (context) => const PageScreen(),
           },
         );
       },

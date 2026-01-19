@@ -184,7 +184,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
                     errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 2,
+                    errorMaxLines: 3,
                     focusedErrorBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
@@ -229,7 +229,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
                     errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 2,
+                    errorMaxLines: 3,
                     focusedErrorBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
@@ -274,7 +274,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
                     errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 2,
+                    errorMaxLines: 3,
                     focusedErrorBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
@@ -341,7 +341,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
                     errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 2,
+                    errorMaxLines: 3,
                     focusedErrorBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.red, width: 2),
                     ),
@@ -369,7 +369,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: (value) {
                     if (value!.isEmpty) {
                       return 'Confirm your password';
-                    } else if (value != confirmPasswordController.text) {
+                    } else if (value != passwordController.text) {
                       return 'Passwords do not match';
                     }
                     return null;
