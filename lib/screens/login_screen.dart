@@ -236,7 +236,7 @@ class _LogInScreenState extends State<LoginScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      Navigator.popAndPushNamed(context, '/page');
+                      Navigator.popAndPushNamed(context, '/dashboard');
                     }
                   },
                   style: TextButton.styleFrom(

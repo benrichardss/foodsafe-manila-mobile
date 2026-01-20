@@ -23,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Container(
               height: ScreenUtil().setSp(150),
-              width: ScreenUtil().screenWidth,
+              width: double.infinity,
               padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
               color: Color(0xFF1555F3),
               child: Column(
@@ -59,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                       child: Container(
                         padding: EdgeInsetsGeometry.all(15),
-                        width: ScreenUtil().screenWidth,
+                        width: double.infinity,
                         child: Column(
                           children: [
                             Row(
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             SizedBox(height: ScreenUtil().setSp(15)),
                             Container(
                               padding: EdgeInsets.all(10),
-                              width: ScreenUtil().screenWidth,
+                              width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 color: Color(0xFFF9FAFB),
@@ -141,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                       child: Container(
                         padding: EdgeInsetsGeometry.all(15),
-                        width: ScreenUtil().screenWidth,
+                        width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -280,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                       child: Container(
                         padding: EdgeInsetsGeometry.all(15),
-                        width: ScreenUtil().screenWidth,
+                        width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -371,98 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                       child: Container(
                         padding: EdgeInsetsGeometry.all(15),
-                        width: ScreenUtil().screenWidth,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Health & Safety',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(15)),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'My Health Records',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.shield_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Vaccination History',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.article_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Saved Alerts',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.star_border_rounded, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: EdgeInsetsGeometry.all(15),
-                        width: ScreenUtil().screenWidth,
+                        width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -521,70 +430,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
                             ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'About DOH Alert',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.info_outline, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
                           ],
                         ),
                       ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: EdgeInsets.all(ScreenUtil().setSp(15)),
-                        width: ScreenUtil().screenWidth,
-                        child: Column(
-                          children: [
-                            Text(
-                              'FoodSafe Manila',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(5)),
-                            Text(
-                              'Version 1.0.0',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(5)),
-                            Text(
-                              'The Marauders',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
                     ),
                     SizedBox(height: ScreenUtil().setSp(10)),
                     Card(
@@ -626,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Container(
                         padding: EdgeInsets.all(ScreenUtil().setSp(15)),
-                        width: ScreenUtil().screenWidth,
+                        width: double.infinity,
                         child: Column(
                           children: [
                             Text(

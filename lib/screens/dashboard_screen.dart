@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:foodsafe_manila/screens/analytics_screen.dart';
 import 'package:foodsafe_manila/screens/predict_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,14 +7,14 @@ import '../screens/profile_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/alerts_screen.dart';
 
-class PageScreen extends StatefulWidget {
-  const PageScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<PageScreen> createState() => _PageScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _PageScreenState extends State<PageScreen> {
+class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
