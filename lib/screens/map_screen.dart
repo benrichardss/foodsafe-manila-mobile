@@ -73,8 +73,29 @@ class _MapScreenState extends State<MapScreen> {
       virus: 'Salmonella',
       location: 'Barangay 123, Tondo',
       riskLevel: 'High Risk',
-      description: 'This outbreak is active in this area. Follow preventive measures and stay informed.',
+      description:
+          'Multiple reported Salmonella cases linked to improperly stored street food.',
       numOfCases: 45,
+      color: Colors.red,
+    ),
+    RiskLocation(
+      position: LatLng(14.6091, 120.9716),
+      virus: 'E. coli',
+      location: 'Barangay 456, Sampaloc',
+      riskLevel: 'High Risk',
+      description:
+          'Confirmed E. coli outbreak associated with contaminated water used in food preparation.',
+      numOfCases: 38,
+      color: Colors.red,
+    ),
+    RiskLocation(
+      position: LatLng(14.5833, 120.9822),
+      virus: 'Norovirus',
+      location: 'Barangay 702, Malate',
+      riskLevel: 'High Risk',
+      description:
+          'Rapid spread of Norovirus linked to shared dining facilities.',
+      numOfCases: 41,
       color: Colors.red,
     ),
     RiskLocation(
@@ -82,8 +103,29 @@ class _MapScreenState extends State<MapScreen> {
       virus: 'Food Poisoning',
       location: 'Barangay 296, Binondo',
       riskLevel: 'Moderate Risk',
-      description: 'This outbreak is active in this area. Follow preventive measures and stay informed.',
-      numOfCases: 12,
+      description:
+          'Several food poisoning cases reported after dining at local eateries.',
+      numOfCases: 18,
+      color: Colors.amber,
+    ),
+    RiskLocation(
+      position: LatLng(14.5896, 120.9754),
+      virus: 'Campylobacter',
+      location: 'Barangay 812, Paco',
+      riskLevel: 'Moderate Risk',
+      description:
+          'Campylobacter cases suspected from undercooked poultry products.',
+      numOfCases: 14,
+      color: Colors.amber,
+    ),
+    RiskLocation(
+      position: LatLng(14.5700, 120.9860),
+      virus: 'Salmonella',
+      location: 'Barangay 833, Pandacan',
+      riskLevel: 'Moderate Risk',
+      description:
+          'Intermittent Salmonella infections reported over the past two weeks.',
+      numOfCases: 21,
       color: Colors.amber,
     ),
     RiskLocation(
@@ -91,8 +133,29 @@ class _MapScreenState extends State<MapScreen> {
       virus: 'Norovirus',
       location: 'Barangay 567, Quiapo',
       riskLevel: 'Low Risk',
-      description: 'This outbreak is active in this area. Follow preventive measures and stay informed.',
+      description:
+          'Isolated Norovirus cases with no ongoing community transmission.',
       numOfCases: 3,
+      color: Colors.green,
+    ),
+    RiskLocation(
+      position: LatLng(14.6226, 120.9756),
+      virus: 'Food Poisoning',
+      location: 'Barangay 591, Santa Mesa',
+      riskLevel: 'Low Risk',
+      description:
+          'Minor food poisoning cases reported and quickly resolved.',
+      numOfCases: 5,
+      color: Colors.green,
+    ),
+    RiskLocation(
+      position: LatLng(14.5622, 120.9956),
+      virus: 'E. coli',
+      location: 'Barangay 874, San Andres Bukid',
+      riskLevel: 'Low Risk',
+      description:
+          'Low number of E. coli cases under monitoring by local health units.',
+      numOfCases: 7,
       color: Colors.green,
     ),
   ];
@@ -101,6 +164,18 @@ class _MapScreenState extends State<MapScreen> {
     return Color.lerp(color, Colors.white, amount)!;
   }
 
+  double markerSizeForCases(int cases) {
+    const double minSize = 24;
+    const double maxSize = 48;
+
+    final maxCases = riskLocations
+        .map((e) => e.numOfCases)
+        .reduce((a, b) => a > b ? a : b);
+
+    if (maxCases == 0) return minSize;
+
+    return minSize + (cases / maxCases) * (maxSize - minSize);
+  }
 
   void _showLocationCard(RiskLocation location) {
     showDialog(
@@ -283,9 +358,9 @@ class _MapScreenState extends State<MapScreen> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: LatLng(14.5995, 120.9842),
-            initialCameraFit: CameraFit.coordinates(
-              coordinates: <LatLng>[LatLng(14.5995, 120.9842)],
-            ),
+            initialZoom: 14,
+            maxZoom: 20,
+            cameraConstraint: CameraConstraint.containLatitude(),
           ),
           children: [
             TileLayer(
@@ -294,6 +369,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             MarkerLayer(
               markers: riskLocations.map((location) {
+                final size = markerSizeForCases(location.numOfCases);
                 return Marker(
                   child: InkWell(
                     onTap: () {
@@ -301,25 +377,19 @@ class _MapScreenState extends State<MapScreen> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: location.color,
+                        color: location.color.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(40),
                         border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.white,
-                        size: 21,
                       ),
                     ),
                   ),
                   alignment: Alignment.center,
-                  width: 36,
-                  height: 36,
+                  width: size,
+                  height: size,
                   point: location.position,
                 );
               }).toList(),
             ),
-
             CurrentLocationLayer(
               style: const LocationMarkerStyle(
                 marker: DefaultLocationMarker(),
@@ -328,12 +398,12 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
             Positioned(
-              top: ScreenUtil().setSp(60),
-              left: ScreenUtil().setSp(20),
+              top: 30,
+              left: 20,
               child: Card(
                 color: Colors.white,
                 child: Padding(
-                  padding: EdgeInsets.all(ScreenUtil().setSp(15)),
+                  padding: const EdgeInsets.all(15),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -375,7 +445,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
             Positioned(
-              top: 60,
+              top: 30,
               right: 20,
               child: Card(
                 shape: RoundedRectangleBorder(
@@ -405,24 +475,25 @@ class _MapScreenState extends State<MapScreen> {
             Positioned(
               left: 20,
               right: 20,
-              bottom: 60,
+              bottom: 40,
               child: Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(48),
                 ),
                 color: Colors.white,
                 child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: ScreenUtil().setSp(15),
-                    horizontal: ScreenUtil().setSp(30),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 30,
                   ),
                   width: double.infinity,
                   child: IntrinsicHeight(
                     child: Row(
-                      spacing: 5,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Spacer(),
                         Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'Outbreaks',
@@ -445,6 +516,7 @@ class _MapScreenState extends State<MapScreen> {
                         VerticalDivider(),
                         Spacer(flex: 1),
                         Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'Moderate',
@@ -467,6 +539,7 @@ class _MapScreenState extends State<MapScreen> {
                         VerticalDivider(),
                         Spacer(flex: 1),
                         Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'Total Cases',
@@ -485,6 +558,7 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                           ],
                         ),
+                        Spacer(),
                       ],
                     ),
                   ),

@@ -22,9 +22,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             Container(
-              height: ScreenUtil().setSp(150),
               width: double.infinity,
-              padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
               color: Color(0xFF1555F3),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: ScreenUtil().setSp(5)),
                   Text(
                     'Manage your account preferences',
                     style: GoogleFonts.inter(
@@ -50,15 +48,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Transform.translate(
-              offset: Offset(0, ScreenUtil().setSp(-30)),
+              offset: const Offset(0, -30),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: ScreenUtil().setSp(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
                     Card(
                       color: Colors.white,
                       child: Container(
-                        padding: EdgeInsetsGeometry.all(15),
+                        padding: const EdgeInsets.all(15),
                         width: double.infinity,
                         child: Column(
                           children: [
@@ -140,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Card(
                       color: Colors.white,
                       child: Container(
-                        padding: EdgeInsetsGeometry.all(15),
+                        padding: const EdgeInsets.all(15),
                         width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.black,
                               ),
                             ),
-                            SizedBox(height: ScreenUtil().setSp(15)),
+                            SizedBox(height: ScreenUtil().setSp(5)),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -279,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Card(
                       color: Colors.white,
                       child: Container(
-                        padding: EdgeInsetsGeometry.all(15),
+                        padding: const EdgeInsets.all(15),
                         width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.black54,
                               ),
                             ),
-                            SizedBox(height: ScreenUtil().setSp(15)),
+                            SizedBox(height: ScreenUtil().setSp(5)),
                             ListTile(
                               onTap: () {
                                 
@@ -370,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Card(
                       color: Colors.white,
                       child: Container(
-                        padding: EdgeInsetsGeometry.all(15),
+                        padding: const EdgeInsets.all(15),
                         width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.black54,
                               ),
                             ),
-                            SizedBox(height: ScreenUtil().setSp(15)),
+                            SizedBox(height: ScreenUtil().setSp(5)),
                             ListTile(
                               onTap: () {
                                 
@@ -442,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () {},
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
-                          padding: EdgeInsets.all(15),
+                          padding: const EdgeInsets.all(15),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -473,7 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: Container(
-                        padding: EdgeInsets.all(ScreenUtil().setSp(15)),
+                        padding: const EdgeInsets.all(15),
                         width: double.infinity,
                         child: Column(
                           children: [

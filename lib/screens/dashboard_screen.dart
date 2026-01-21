@@ -39,6 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       bottomNavigationBar: Container(
+        height: 64,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
