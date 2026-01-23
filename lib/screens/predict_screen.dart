@@ -107,99 +107,101 @@ class _PredictScreenState extends State<PredictScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: GradientStatCard(
-                      title: 'High Risk Districts',
-                      value: '$highCount',
-                      icon: Icons.warning_amber_rounded,
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GradientStatCard(
-                      title: 'Average Risk Score',
-                      value: avgRisk.toStringAsFixed(1),
-                      icon: Icons.shield_outlined,
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ChartCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Case Forecast (Next Quarter)',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                    Expanded(
+                      child: GradientStatCard(
+                        title: 'High Risk Districts',
+                        value: '$highCount',
+                        icon: Icons.warning_amber_rounded,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
                         ),
-                        Icon(
-                          Icons.calendar_month,
-                          size: 18,
-                          color: Colors.grey.shade400,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientStatCard(
+                        title: 'Average Risk Score',
+                        value: avgRisk.toStringAsFixed(1),
+                        icon: Icons.shield_outlined,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      child: const Chart()
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Predicted cases with confidence intervals',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'District Risk Predictions',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 14),
+                ChartCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Case Forecast',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.calendar_month,
+                            size: 18,
+                            color: Colors.grey.shade400,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        child: const Chart()
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Predicted cases with confidence intervals',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              ...districts.map(
-                (d) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: DistrictRiskCard(district: d, onTap: () {}),
+                const SizedBox(height: 14),
+                Text(
+                  'District Risk Predictions',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 14),
+                ...districts.map(
+                  (d) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: DistrictRiskCard(district: d, onTap: () {}),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

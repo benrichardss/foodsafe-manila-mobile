@@ -180,7 +180,7 @@ class Chart extends StatelessWidget {
       child: LineChart(
         LineChartData(
           minX: 0,
-          maxX: 11,
+          maxX: 9,
           minY: 0,
           maxY: 120,
 
@@ -213,24 +213,22 @@ class Chart extends StatelessWidget {
                 interval: 1,
                 getTitlesWidget: (value, meta) {
                   if (value % 2 != 0) return const SizedBox.shrink();
-                  const months = [
-                    'Jan',
-                    'Feb',
-                    'Mar',
-                    'Apr',
-                    'May',
-                    'Jun',
-                    'Jul',
-                    'Aug',
-                    'Sep',
-                    'Oct',
-                    'Nov',
-                    'Dec',
+                  const years = [
+                    '2015',
+                    '2016',
+                    '2017',
+                    '2018',
+                    '2019',
+                    '2020',
+                    '2021',
+                    '2022',
+                    '2023',
+                    '2024',
                   ];
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      months[value.toInt()],
+                      years[value.toInt()],
                       style: const TextStyle(fontSize: 11),
                     ),
                   );
@@ -277,8 +275,6 @@ class Chart extends StatelessWidget {
                 FlSpot(7, 108),
                 FlSpot(8, 88),
                 FlSpot(9, 78),
-                FlSpot(10, 90),
-                FlSpot(11, 100),
               ],
             ),
 
@@ -299,8 +295,6 @@ class Chart extends StatelessWidget {
                 FlSpot(7, 72),
                 FlSpot(8, 55),
                 FlSpot(9, 50),
-                FlSpot(10, 55),
-                FlSpot(11, 60),
               ],
             ),
 
@@ -334,8 +328,6 @@ class Chart extends StatelessWidget {
                 FlSpot(7, 88),
                 FlSpot(8, 70),
                 FlSpot(9, 60),
-                FlSpot(10, 68),
-                FlSpot(11, 75),
               ],
             ),
           ],

@@ -37,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       bottomNavigationBar: Container(
-        height: 80,
+        height: 64,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
@@ -52,26 +52,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           iconSize: 24,
           selectedLabelStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
-            fontSize: 12
+            fontSize: 10
           ),
           unselectedLabelStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
-            fontSize: 12
+            fontSize: 10
           ),
           showSelectedLabels: true,
           showUnselectedLabels: true,
           onTap: _onTappedBar,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined,),
+              icon: Icon(Icons.home,),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.location_on_outlined,),
+              icon: Icon(Icons.location_pin,),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
+              icon: Icon(Icons.bar_chart),
               label: 'Analytics',
             ),
             BottomNavigationBarItem(
@@ -83,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label: 'Profile',
             ),
           ],
-          selectedItemColor: Color(0xFF1555F3),
+          selectedItemColor: Colors.blue,
           unselectedItemColor: Colors.black45,
           currentIndex: _selectedIndex,
         ),

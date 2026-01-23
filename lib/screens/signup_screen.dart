@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -10,442 +9,518 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  final passwordRegex = RegExp(
-    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
-  );
-  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  final phoneRegex = RegExp(r'^(?:\D*\d){10,}\D*$');
+
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController(text: "Manila");
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+
+  String? _barangay;
+  String? _district;
+
+  bool _pushNotif = true;
+  bool _locationService = true;
+  bool _showPass = false;
+  bool _showConfirmPass = false;
+
+  final barangays = [
+    "Barangay 1 - Tondo",
+    "Barangay 123 - Tondo",
+    "Barangay 234 - Binondo",
+    "Barangay 456 - Sampaloc",
+    "Barangay 567 - Sta. Cruz",
+    "Barangay 789 - Quiapo",
+    "Barangay 890 - Ermita",
+  ];
+
+  final districts = [
+    "District 1",
+    "District 2",
+    "District 3",
+    "District 4",
+    "District 5",
+    "District 6",
+  ];
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _cityCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Account created (demo)")),
+    );
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
+      body: SafeArea(
+        top: true,
         child: Container(
-          height: ScreenUtil().screenHeight,
-          width: ScreenUtil().screenWidth,
-          padding: EdgeInsets.symmetric(
-            horizontal: ScreenUtil().setWidth(35),
-            vertical: ScreenUtil().setHeight(65),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+            ),
           ),
-          child: Form(
-            key: _formKey,
+          child: SingleChildScrollView(
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        size: ScreenUtil().setSp(25),
-                        color: Colors.black,
-                      ),
-                      style: IconButton.styleFrom(
-                        padding: EdgeInsets.zero,
+                /// HEADER
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    children: [
+                      Align(
                         alignment: Alignment.centerLeft,
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.popAndPushNamed(context, '/login');
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'FoodSafe',
-                          style: GoogleFonts.inter(
-                            fontSize: ScreenUtil().setSp(15),
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back,
+                              color: Colors.white70),
+                          label: Text(
+                            "Back",
+                            style: GoogleFonts.inter(color: Colors.white70),
                           ),
                         ),
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: ScreenUtil().setSp(25),
-                          color: Colors.black,
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: const [
+                              BoxShadow(
+                                blurRadius: 24,
+                                offset: Offset(0, 12),
+                                color: Color(0x33000000),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.monitor_heart_outlined,
+                            size: 44,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        "Create Account",
+                        style: GoogleFonts.inter(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Register to receive health alerts in your area",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFFBFDBFE),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                    ],
+                  ),
+                ),
+
+                /// WHITE SHEET
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle(
+                          "Personal Information",
+                          "Tell us a bit about yourself",
+                        ),
+
+                        _LabeledField(
+                          label: "Full Name *",
+                          child: TextFormField(
+                            controller: _nameCtrl,
+                            validator: _required,
+                            decoration: const InputDecoration(
+                              hintText: "Juan Dela Cruz",
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "Phone Number *",
+                          child: TextFormField(
+                            controller: _phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                            validator: (v) {
+                              final value = (v ?? "").trim();
+                              if (value.isEmpty) return "Phone number is required.";
+                              if (value.length < 8) return "Enter a valid phone number.";
+                              return null;
+                            },
+                            decoration: const InputDecoration(
+                              hintText: "+63 912 345 6789",
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                          ),
+                        ),
+
+                        _helper("We'll send SMS alerts to this number"),
+
+                        _divider(),
+
+                        _sectionTitle(
+                          "Account Security",
+                          "Set a password for your account",
+                        ),
+
+                        _LabeledField(
+                          label: "Password *",
+                          child: TextFormField(
+                            controller: _passCtrl,
+                            obscureText: !_showPass,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return "Password is required";
+                              }
+                              if (v.length < 6) {
+                                return "Password must be at least 6 characters";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              hintText: "••••••••",
+                              prefixIcon:
+                                  const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                onPressed: () =>
+                                    setState(() => _showPass = !_showPass),
+                                icon: Icon(_showPass
+                                    ? Icons.visibility
+                                    : Icons.visibility_off),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        _helper('Must be at least 6 characters'),
+
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "Confirm Password *",
+                          child: TextFormField(
+                            controller: _confirmPassCtrl,
+                            obscureText: !_showConfirmPass,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return "Please confirm your password";
+                              }
+                              if (v != _passCtrl.text) {
+                                return "Passwords do not match";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              hintText: "••••••••",
+                              prefixIcon:
+                                  const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(
+                                    () => _showConfirmPass =
+                                        !_showConfirmPass),
+                                icon: Icon(_showConfirmPass
+                                    ? Icons.visibility
+                                    : Icons.visibility_off),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        _divider(),
+
+                        _sectionTitle(
+                          "Location Information",
+                          "Help us send you relevant alerts for your area",
+                        ),
+
+                        _LabeledField(
+                          label: "Barangay *",
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _barangay,
+                            hint: const Text("Select your barangay"),
+                            items: barangays
+                                .map((e) => DropdownMenuItem(
+                                      value: e,
+                                      child: Text(e),
+                                    ))
+                                .toList(),
+                            validator: _required,
+                            onChanged: (v) =>
+                                setState(() => _barangay = v),
+                            decoration: const InputDecoration(
+                              prefixIcon:
+                                  Icon(Icons.location_on_outlined),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "District *",
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _district,
+                            hint: const Text("Select your district"),
+                            items: districts
+                                .map((e) => DropdownMenuItem(
+                                      value: e,
+                                      child: Text(e),
+                                    ))
+                                .toList(),
+                            validator: _required,
+                            onChanged: (v) =>
+                                setState(() => _district = v),
+                            decoration: const InputDecoration(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "City / Municipality",
+                          child: TextFormField(
+                            controller: _cityCtrl,
+                            decoration: const InputDecoration(),
+                          ),
+                        ),
+
+                        _divider(),
+
+                        _sectionTitle(
+                          "Notification Preferences",
+                          "Choose how you want to receive alerts",
+                        ),
+
+                        _toggleTile(
+                          title: "Push Notifications",
+                          subtitle:
+                              "Receive instant disease outbreak alerts",
+                          value: _pushNotif,
+                          onChanged: (v) =>
+                              setState(() => _pushNotif = v),
+                        ),
+                        _toggleTile(
+                          title: "Location Services",
+                          subtitle:
+                              "For location-based health alerts",
+                          value: _locationService,
+                          onChanged: (v) =>
+                              setState(() => _locationService = v),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        Text(
+                          "By creating an account, you agree to our Terms of Service and Privacy Policy. "
+                          "Your data is protected under the Data Privacy Act of 2012.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: const Color(0xFF4B5563),
+                            height: 1.35,
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              "Create Account",
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                SizedBox(height: ScreenUtil().setHeight(49)),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: ScreenUtil().setWidth(290),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hi, Welcome!',
-                            style: GoogleFonts.inter(
-                              fontSize: ScreenUtil().setSp(25),
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Text(
-                            'Let\'s create an account',
-                            maxLines: 2,
-                            style: GoogleFonts.inter(
-                              fontSize: ScreenUtil().setSp(12),
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: ScreenUtil().setHeight(40)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Email or Phone',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0,
-                      ScreenUtil().setHeight(10),
-                      ScreenUtil().setWidth(10),
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
                   ),
-                  controller: emailController,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Enter email or phone number';
-                    } else if (!emailRegex.hasMatch(value) &&
-                        !phoneRegex.hasMatch(value)) {
-                      return 'Please enter a valid email or phone number';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => emailController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(10)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0,
-                      ScreenUtil().setHeight(10),
-                      ScreenUtil().setWidth(10),
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 3,
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
-                  ),
-                  controller: nameController,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Enter your full name';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => nameController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(10)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0,
-                      ScreenUtil().setHeight(10),
-                      ScreenUtil().setWidth(10),
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 3,
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
-                  ),
-                  controller: usernameController,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Enter username';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => usernameController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(10)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0,
-                      ScreenUtil().setHeight(10),
-                      ScreenUtil().setWidth(10),
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 3,
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: _obscurePassword
-                            ? Colors.grey
-                            : Color(0xFF343341),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                  controller: passwordController,
-                  obscureText: _obscurePassword,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Enter a password';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters long.';
-                    }
-                    if (!passwordRegex.hasMatch(passwordController.text)) {
-                      return 'Please choose a stronger password. Try a mix of uppercase and lowercase letters, numbers, and symbols.';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => passwordController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(10)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0,
-                      ScreenUtil().setHeight(10),
-                      ScreenUtil().setWidth(10),
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    errorMaxLines: 3,
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: _obscureConfirmPassword
-                            ? Colors.grey
-                            : Color(0xFF343341),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
-                  ),
-                  controller: confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Confirm your password';
-                    } else if (value != passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => confirmPasswordController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                    }
-                  },
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    backgroundColor: Color(0xFF343341),
-                    foregroundColor: Colors.white,
-                    minimumSize: Size(
-                      ScreenUtil().screenWidth,
-                      ScreenUtil().setHeight(20),
-                    ),
-                    textStyle: TextStyle(
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  child: Text('Sign Up'),
-                ),
-                const Spacer(flex: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Have an account? ',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: ScreenUtil().setSp(12),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.popAndPushNamed(context, '/login');
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
-                        ),
-                      ),
-                      child: Text(
-                        'Log In',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: ScreenUtil().setSp(12),
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
         ),
-      ),
+      )
+    );
+  }
+
+  String? _required(String? v) =>
+      (v == null || v.isEmpty) ? "Required field" : null;
+
+  Widget _sectionTitle(String title, String subtitle) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: GoogleFonts.inter(
+                    fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(subtitle,
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: const Color(0xFF4B5563))),
+          ],
+        ),
+      );
+
+  Widget _helper(String text) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+              fontSize: 11, color: const Color(0xFF6B7280)),
+        ),
+      );
+
+  Widget _divider() => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+      );
+
+  Widget _toggleTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) =>
+      Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text(subtitle,
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: const Color(0xFF6B7280))),
+                ],
+              ),
+            ),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              thumbColor: const WidgetStatePropertyAll<Color>(Colors.white),
+              activeTrackColor: Color(0xFF2563EB),
+              inactiveTrackColor: Color(0xFFE5E7EB),
+              trackOutlineColor: const WidgetStatePropertyAll<Color>(
+                Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+/// SHARED INPUT STYLE (SAME AS LOGIN)
+class _LabeledField extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _LabeledField({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Theme(
+          data: Theme.of(context).copyWith(
+            inputDecorationTheme: InputDecorationTheme(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                    color: Color(0xFF3B82F6), width: 2),
+              ),
+            ),
+          ),
+          child: child,
+        ),
+      ],
     );
   }
 }

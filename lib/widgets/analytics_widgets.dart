@@ -270,9 +270,9 @@ Widget lineChart() {
     child: LineChart(
       LineChartData(
         minX: 0,
-        maxX: 11,
+        maxX: 9,
         minY: 0,
-        maxY: 120,
+        maxY: 250,
 
         gridData: FlGridData(
           show: true,
@@ -303,24 +303,22 @@ Widget lineChart() {
               interval: 1,
               getTitlesWidget: (value, meta) {
                 if (value % 2 != 0) return const SizedBox.shrink();
-                const months = [
-                  'Jan',
-                  'Feb',
-                  'Mar',
-                  'Apr',
-                  'May',
-                  'Jun',
-                  'Jul',
-                  'Aug',
-                  'Sep',
-                  'Oct',
-                  'Nov',
-                  'Dec',
+                const years = [
+                  '2015',
+                  '2016',
+                  '2017',
+                  '2018',
+                  '2019',
+                  '2020',
+                  '2021',
+                  '2022',
+                  '2023',
+                  '2024',
                 ];
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    months[value.toInt()],
+                    years[value.toInt()],
                     style: const TextStyle(fontSize: 11),
                   ),
                 );
@@ -332,7 +330,7 @@ Widget lineChart() {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
-              interval: 30,
+              interval: 50,
               getTitlesWidget: (value, meta) {
                 return Padding(
                   padding: const EdgeInsetsGeometry.only(right: 8),
@@ -369,18 +367,16 @@ Widget lineChart() {
             belowBarData: BarAreaData(show: false),
 
             spots: const [
-              FlSpot(0, 70), // Jan
-              FlSpot(1, 105), // Feb
-              FlSpot(2, 92), // Mar
-              FlSpot(3, 60), // Apr
-              FlSpot(4, 95), // May
-              FlSpot(5, 55), // Jun
-              FlSpot(6, 68), // Jul
-              FlSpot(7, 50), // Aug
-              FlSpot(8, 45), // Sep
-              FlSpot(9, 55), // Oct
-              FlSpot(10, 75), // Nov
-              FlSpot(11, 55), // Dec
+              FlSpot(0, 46), // Jan
+              FlSpot(1, 199), // Feb
+              FlSpot(2, 137), // Mar
+              FlSpot(3, 106), // Apr
+              FlSpot(4, 48), // May
+              FlSpot(5, 8), // Jun
+              FlSpot(6, 1), // Jul
+              FlSpot(7, 21), // Aug
+              FlSpot(8, 28), // Sep
+              FlSpot(9, 236), // Oct
             ],
           ),
         ],

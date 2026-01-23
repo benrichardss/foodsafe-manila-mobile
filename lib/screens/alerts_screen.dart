@@ -161,64 +161,67 @@ class _AlertsScreenState extends State<AlertsScreen> {
               )
             : null,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-            child: Column(
-              children: filteredAlerts.map((item) {
-                final index = alerts.indexOf(item);
-                final isUnread = index < unreadCount;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: AlertCard(
-                    item: item,
-                    isUnread: isUnread,
-                    onDetails: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Details: ${item.title}")),
-                      );
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                      elevation: 6,
+      body: SafeArea(
+        top: true,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+              child: Column(
+                children: filteredAlerts.map((item) {
+                  final index = alerts.indexOf(item);
+                  final isUnread = index < unreadCount;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: AlertCard(
+                      item: item,
+                      isUnread: isUnread,
+                      onDetails: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Details: ${item.title}")),
+                        );
+                      },
                     ),
-                    onPressed: unreadCount == 0
-                        ? null
-                        : () => setState(() => unreadCount = 0),
-                    child: Text(
-                      unreadCount == 0
-                          ? "All Read"
-                          : "Mark All as Read ($unreadCount)",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                  );
+                }).toList(),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 24,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                        elevation: 6,
+                      ),
+                      onPressed: unreadCount == 0
+                          ? null
+                          : () => setState(() => unreadCount = 0),
+                      child: Text(
+                        unreadCount == 0
+                            ? "All Read"
+                            : "Mark All as Read ($unreadCount)",
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      )
     );
   }
 

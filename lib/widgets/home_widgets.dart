@@ -9,7 +9,7 @@ class Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 40, 16, 36),
+      padding: const EdgeInsets.fromLTRB(16, 30, 16, 36),
       decoration: BoxDecoration(
         color:  Color(0xFF2563EB),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -38,9 +38,9 @@ class Header extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "Stay safe, stay informed",
+                      "Stay informed about health risks in your area!",
                       style: GoogleFonts.inter(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: Colors.white,
                       ),
                     ),
@@ -62,12 +62,12 @@ class Header extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
+                        color: const Color(0xFFF3F4F6).withValues(alpha: .15),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Icon(
                         Icons.notifications_none_rounded,
-                        color: Color(0xFF4B5563),
+                        color: Colors.white,
                       ),
                     ),
                     Positioned(

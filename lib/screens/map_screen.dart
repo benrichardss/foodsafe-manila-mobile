@@ -351,128 +351,131 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: LatLng(14.5995, 120.9842),
-            initialZoom: 14,
-            maxZoom: 20,
-            cameraConstraint: CameraConstraint.containLatitude(),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.foodsafe_manila',
+    return SafeArea(
+      top: true,
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: LatLng(14.5995, 120.9842),
+              initialZoom: 14,
+              maxZoom: 20,
+              cameraConstraint: CameraConstraint.containLatitude(),
             ),
-            MarkerLayer(
-              markers: riskLocations.map((location) {
-                final size = markerSizeForCases(location.numOfCases);
-                return Marker(
-                  child: InkWell(
-                    onTap: () {
-                      _showLocationCard(location);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: location.color.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(40),
-                        border: Border.all(color: Colors.white, width: 2),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.foodsafe_manila',
+              ),
+              MarkerLayer(
+                markers: riskLocations.map((location) {
+                  final size = markerSizeForCases(location.numOfCases);
+                  return Marker(
+                    child: InkWell(
+                      onTap: () {
+                        _showLocationCard(location);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: location.color.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
                       ),
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  width: size,
-                  height: size,
-                  point: location.position,
-                );
-              }).toList(),
-            ),
-            CurrentLocationLayer(
-              style: const LocationMarkerStyle(
-                marker: DefaultLocationMarker(),
-                markerSize: Size(20, 20),
-                markerDirection: MarkerDirection.heading,
+                    alignment: Alignment.center,
+                    width: size,
+                    height: size,
+                    point: location.position,
+                  );
+                }).toList(),
               ),
-            ),
-            RichAttributionWidget(
-              attributions: [
-                TextSourceAttribution(
-                  'OpenStreetMap contributors',
-                  onTap: () =>
-                      (Uri.parse('https://openstreetmap.org/copyright')),
+              CurrentLocationLayer(
+                style: const LocationMarkerStyle(
+                  marker: DefaultLocationMarker(),
+                  markerSize: Size(20, 20),
+                  markerDirection: MarkerDirection.heading,
                 ),
-              ],
-            ),
-          ],
-        ),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black26, Colors.transparent],
               ),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search location...',
-                hintStyle: GoogleFonts.inter(),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+              RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(
+                    'OpenStreetMap contributors',
+                    onTap: () =>
+                        (Uri.parse('https://openstreetmap.org/copyright')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: -20,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black26, Colors.transparent],
+                ),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search location...',
+                  hintStyle: GoogleFonts.inter(),
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
 
-        // RIGHT FLOATING NAV BUTTON
-        Positioned(
-          right: 16,
-          top: 140,
-          child: isLoading
-          ? CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.white,
-              child: CircularProgressIndicator(
-                color: Color(0xFF2563EB),
-                padding: EdgeInsets.all(12),
-                strokeWidth: 2,
-              ),
+          // RIGHT FLOATING NAV BUTTON
+          Positioned(
+            right: 16,
+            top: 120,
+            child: isLoading
+            ? CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.white,
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2563EB),
+                  padding: EdgeInsets.all(12),
+                  strokeWidth: 2,
+                ),
+              )
+            : InkWell(
+              onTap: _userCurrentLocation,
+              child: _circleButton(Icons.my_location, Color(0xFF2563EB)),
             )
-          : InkWell(
-            onTap: _userCurrentLocation,
-            child: _circleButton(Icons.my_location, Color(0xFF2563EB)),
-          )
-        ),
+          ),
 
 
-        // LEFT LEGEND CARD
-        Positioned(
-          left: 16,
-          top: 140,
-          child: _legendCard(),
-        ),
+          // LEFT LEGEND CARD
+          Positioned(
+            left: 16,
+            top: 120,
+            child: _legendCard(),
+          ),
 
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 60,
-          child: _bottomStats(),
-        ),
-      ],
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 60,
+            child: _bottomStats(),
+          ),
+        ],
+      )
     );
   }
 }

@@ -76,76 +76,79 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CurrentCasesCard(
-                cases: 110,
-                changePercent: 34.1,
-                subtitle: 'Increase from previous month',
-                onTap: () {},
-              ),
-              const SizedBox(height: 14),
-              SegmentedTabs(
-                value: tab,
-                onChanged: (v) => setState(() => tab = v),
-              ),
-              const SizedBox(height: 14),
-              ChartCard(
-                title: tab == ViewTab.trends
-                    ? 'Case Trends'
-                    : tab == ViewTab.districts
-                        ? 'Cases by District'
-                        : 'Cases by Illness',
-                child: Chart(tab: tab),
-              ),
-              const SizedBox(height: 14),
-              SectionTitle(text: 'Key Insights'),
-              const SizedBox(height: 10),
-              InsightCard(
-                colorBg: const Color(0xFFEFF6FF),
-                colorBorder: const Color(0xFFDBEAFE),
-                iconBg: const Color(0xFF2563EB),
-                icon: Icons.trending_up,
-                title: 'Highest Cases',
-                description:
-                    'Tondo district has the highest cases (245) this month',
-              ),
-              const SizedBox(height: 10),
-              InsightCard(
-                colorBg: const Color(0xFFF5F3FF),
-                colorBorder: const Color(0xFFE9D5FF),
-                iconBg: const Color(0xFF7C3AED),
-                icon: Icons.calendar_month,
-                title: 'Most Common',
-                description: 'Food Poisoning accounts for 35% of all cases',
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: const [
-                  Expanded(
-                    child: StatCard(
-                      label: 'Total Cases',
-                      value: '889',
-                      footnote: 'Last 5 years',
-                      footnoteColor: Color(0xFF16A34A),
+      body: SafeArea(
+        top: true,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CurrentCasesCard(
+                  cases: 110,
+                  changePercent: 34.1,
+                  subtitle: 'Increase from previous month',
+                  onTap: () {},
+                ),
+                const SizedBox(height: 14),
+                SegmentedTabs(
+                  value: tab,
+                  onChanged: (v) => setState(() => tab = v),
+                ),
+                const SizedBox(height: 14),
+                ChartCard(
+                  title: tab == ViewTab.trends
+                      ? 'Case Trends'
+                      : tab == ViewTab.districts
+                          ? 'Cases by District'
+                          : 'Cases by Illness',
+                  child: Chart(tab: tab),
+                ),
+                const SizedBox(height: 14),
+                SectionTitle(text: 'Key Insights'),
+                const SizedBox(height: 10),
+                InsightCard(
+                  colorBg: const Color(0xFFEFF6FF),
+                  colorBorder: const Color(0xFFDBEAFE),
+                  iconBg: const Color(0xFF2563EB),
+                  icon: Icons.trending_up,
+                  title: 'Highest Cases',
+                  description:
+                      'Tondo district has the highest cases (245) this month',
+                ),
+                const SizedBox(height: 10),
+                InsightCard(
+                  colorBg: const Color(0xFFF5F3FF),
+                  colorBorder: const Color(0xFFE9D5FF),
+                  iconBg: const Color(0xFF7C3AED),
+                  icon: Icons.calendar_month,
+                  title: 'Most Common',
+                  description: 'Food Poisoning accounts for 35% of all cases',
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: const [
+                    Expanded(
+                      child: StatCard(
+                        label: 'Total Cases',
+                        value: '889',
+                        footnote: 'Last 5 years',
+                        footnoteColor: Color(0xFF16A34A),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: StatCard(
-                      label: 'Avg Per Year',
-                      value: '29.6',
-                      footnote: 'cases/year',
-                      footnoteColor: Color(0xFF6B7280),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: StatCard(
+                        label: 'Avg Per Year',
+                        value: '29.6',
+                        footnote: 'cases/year',
+                        footnoteColor: Color(0xFF6B7280),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
