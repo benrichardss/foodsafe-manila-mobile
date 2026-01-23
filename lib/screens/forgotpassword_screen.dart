@@ -1,213 +1,279 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  TextEditingController usernameController = TextEditingController();
+class _ForgotScreenState extends State<ForgotPasswordScreen> {
+  final _phoneCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+    try {
+      // TODO: replace with auth call
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Signed in (demo)")),
+      );
+      Navigator.pushReplacementNamed(context, '/');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Container(
-          height: ScreenUtil().screenHeight,
-          width: ScreenUtil().screenWidth,
-          padding: EdgeInsets.symmetric(
-            horizontal: ScreenUtil().setWidth(35),
-            vertical: ScreenUtil().setHeight(65),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
           ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(24, 24, 24, 12),
+                child: Column(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back,
-                        size: ScreenUtil().setSp(25),
-                        color: Colors.black,
+                    Transform.translate(
+                      offset: Offset(-100, 0),
+                      child: TextButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, color: Colors.white70),
+                        label: Text(
+                          "Back to Login",
+                          style: GoogleFonts.inter(color: Colors.white70, fontSize: 14),
+                        ),
                       ),
-                      style: IconButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.centerLeft,
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
-                        )
-                      ),
-                      onPressed: () {
-                        Navigator.popAndPushNamed(context, '/login');
-                      }
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+
+                    const SizedBox(height: 18),
+
+                    Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: const [
+                          BoxShadow(
+                            blurRadius: 24,
+                            offset: Offset(0, 12),
+                            color: Color(0x33000000),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.monitor_heart_outlined, // lucide-activity vibe
+                        size: 56,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Title
+                  Text(
+                    "Forgot Password",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Enter your phone number to receive password reset instructions",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 13, color: Color(0xFFBFDBFE)),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Demo credentials card
+                  
+
+                  const SizedBox(height: 22),
+                ],
+              ),
+            ),
+            // White sheet (but still in SAME scroll)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFEFF6FF),
+                      border: Border.all(color: Color(0xFFBFDBFE)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Expanded(
+                      child: Text(
+                        "We'll send a verification code to your registered phone number via SMS. Use this code to reset your password.",
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Form(
+                    key: _formKey,
+                    child: Column(
                       children: [
+                        _LabeledField(
+                          label: "Phone Number *",
+                          child: TextFormField(
+                            controller: _phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              hintText: "+63 912 345 6789",
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                            validator: (v) {
+                              final value = (v ?? "").trim();
+                              if (value.isEmpty) return "Phone number is required.";
+                              if (value.length < 8) return "Enter a valid phone number.";
+                              return null;
+                            },
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 8),
+
                         Text(
-                          'FoodSafe',
-                          style: GoogleFonts.inter(
-                            fontSize: ScreenUtil().setSp(15),
-                            fontWeight: FontWeight.w800,  
-                            color: Colors.black,
-                          ),
+                          "Enter the phone number you used during registration",
+                          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
                         ),
-                        Icon(Icons.location_on_outlined,
-                          size: ScreenUtil().setSp(25),
-                          color: Colors.black,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                
-                SizedBox(height: ScreenUtil().setHeight(49)),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                      maxWidth: ScreenUtil().setWidth(290),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Oh, no! I forgot',
-                            style: GoogleFonts.inter(
-                              fontSize: ScreenUtil().setSp(25),
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
-                            )
-                          ),
-                          Text(
-                            'Enter your email, phone, or username and we\'ll send you a link to change a new password.',
-                            maxLines: 2,
-                            style: GoogleFonts.inter(
-                              fontSize: ScreenUtil().setSp(12),
-                              color: Colors.black,
-                            )
+                        
+                        const SizedBox(height: 18),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _signIn,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Text(
+                                    "Send Reset Code",
+                                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                                  ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: ScreenUtil().setHeight(34)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Username, Email, or Phone',
-                    labelStyle: GoogleFonts.inter(
-                      color: Colors.grey,
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w400
-                    ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      0, 
-                      ScreenUtil().setHeight(10), 
-                      ScreenUtil().setWidth(10), 
-                      0
-                    ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 2),
-                    ),
-                    errorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    errorStyle: const TextStyle(fontFamily: 'Inter'),
-                    focusedErrorBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                    ),
-                  ),
-                  controller: usernameController,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Enter username, email, or phone' : null,
-                  onSaved: (value) => usernameController.text = value!,
-                  style: TextStyle(
-                    fontSize: ScreenUtil().setSp(15),
-                    color: Colors.black,
-                  ),
-                  cursorColor: Colors.black,
-                  cursorErrorColor: Colors.red,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(20)),
-                TextButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                    }
-                  },
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    backgroundColor: Color(0xFF343341),
-                    foregroundColor: Colors.white,
-                    minimumSize: Size(
-                      ScreenUtil().screenWidth, 
-                      ScreenUtil().setHeight(20)
-                    ),
-                    textStyle: TextStyle(
-                      fontSize: ScreenUtil().setSp(12),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ), 
-                  child: 
-                  Text('Forgot Password'),
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                    'Don\'t have an account? ',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: ScreenUtil().setSp(12),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.popAndPushNamed(context, '/signup');
-                      }, 
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
+
+                    const SizedBox(height: 12),
+                    // Sign in redirect
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: RichText(
+                          text: TextSpan(
+                            text: "Remember your password? ",
+                            style: GoogleFonts.inter(color: Colors.grey[600], fontSize: 13),
+                            children: [
+                              TextSpan(
+                                text: "Sign in",
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF2563EB),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Text(  
-                        'Sign Up',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: ScreenUtil().setSp(12),
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      )
                     ),
                   ],
                 ),
-              ],
+              ),
+            ],
+          ),
+        )
+      ),
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _LabeledField({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+        const SizedBox(height: 8),
+        Theme(
+          data: Theme.of(context).copyWith(
+            inputDecorationTheme: InputDecorationTheme(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+              ),
             ),
           ),
+          child: child,
         ),
-      ),
+      ],
     );
   }
 }

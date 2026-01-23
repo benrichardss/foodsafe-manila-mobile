@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../screens/home_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/map_screen.dart';
-import '../screens/alerts_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,7 +28,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const MapScreen(),
           const AnalyticsScreen(),
           const PredictScreen(),
-          const AlertsScreen(),
           const ProfileScreen(),
         ],
         onPageChanged: (page) {
@@ -39,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       bottomNavigationBar: Container(
-        height: 64,
+        height: 80,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
@@ -51,14 +49,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: BottomNavigationBar(
           backgroundColor: Colors.white,
           type: BottomNavigationBarType.fixed,
-          iconSize: 18,
+          iconSize: 24,
           selectedLabelStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.bold,
-            fontSize: 10
+            fontWeight: FontWeight.w600,
+            fontSize: 12
           ),
           unselectedLabelStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.bold,
-            fontSize: 10
+            fontWeight: FontWeight.w600,
+            fontSize: 12
           ),
           showSelectedLabels: true,
           showUnselectedLabels: true,
@@ -79,10 +77,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.trending_up),
               label: 'Predict',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Alerts',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person,),

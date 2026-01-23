@@ -85,7 +85,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               CurrentCasesCard(
                 cases: 110,
                 changePercent: 34.1,
-                subtitle: 'Increase from previous day',
+                subtitle: 'Increase from previous month',
                 onTap: () {},
               ),
               const SizedBox(height: 14),
@@ -130,16 +130,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     child: StatCard(
                       label: 'Total Cases',
                       value: '889',
-                      footnote: 'Last 30 days',
+                      footnote: 'Last 5 years',
                       footnoteColor: Color(0xFF16A34A),
                     ),
                   ),
                   SizedBox(width: 12),
                   Expanded(
                     child: StatCard(
-                      label: 'Avg Per Day',
+                      label: 'Avg Per Year',
                       value: '29.6',
-                      footnote: 'cases/day',
+                      footnote: 'cases/year',
                       footnoteColor: Color(0xFF6B7280),
                     ),
                   ),

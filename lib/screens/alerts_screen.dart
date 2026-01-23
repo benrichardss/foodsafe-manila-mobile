@@ -85,7 +85,6 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         surfaceTintColor: const Color(0xFFF9FAFB),
         backgroundColor: Colors.white,
         toolbarHeight: 92, // stays constant
@@ -168,11 +167,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
             child: Column(
               children: filteredAlerts.map((item) {
+                final index = alerts.indexOf(item);
+                final isUnread = index < unreadCount;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: AlertCard(
                     item: item,
-                    isUnread: true,
+                    isUnread: isUnread,
                     onDetails: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Details: ${item.title}")),
@@ -234,6 +235,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
       selected: isSelected,
       selectedColor: const Color(0xFF2563EB),
       backgroundColor: const Color(0xFFF3F4F6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      side: BorderSide.none,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       onSelected: (_) {
         setState(() {
           selectedFilter = risk;

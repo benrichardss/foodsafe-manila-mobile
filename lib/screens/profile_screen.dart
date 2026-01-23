@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -10,490 +9,324 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isSwitched1 = true;
-  bool isSwitched2 = true;
-  bool isSwitched3 = true;
+  bool pushNotifications = true;
+  bool smsAlerts = true;
+  bool highRiskAlerts = false;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        color: Color(0xFFF9FAFB),
-        child: Column(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB), // bg-gray-50
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
+            // Header with gradient
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
-              color: Color(0xFF1555F3),
+              padding: const EdgeInsets.fromLTRB(16, 48, 16, 32),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)], // from-blue-600 to-blue-700
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: const [
                   Text(
                     'Profile',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                    style: TextStyle(
                       color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  SizedBox(height: 4),
                   Text(
-                    'Manage your account preferences',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.normal,
-                      fontSize: 12,
+                    'Manage your account and preferences',
+                    style: TextStyle(
                       color: Colors.white,
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ),
             Transform.translate(
-              offset: const Offset(0, -30),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Color(0xFF1555F3),
+              offset: const Offset(0, -20),
+              child: Column(
+                children: [
+                  // Profile Card
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Avatar and Info
+                          Row(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                                  ),
+                                ),
+                                child: const Center(
                                   child: Text(
                                     'J',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                    ),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
-                                SizedBox(width: ScreenUtil().setSp(10)),
-                                Column(
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                                  children: const [
                                     Text(
                                       'Juan Dela Cruz',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black,
-                                      ),
+                                      style: TextStyle(
+                                          fontSize: 18, fontWeight: FontWeight.bold),
                                     ),
-                                    SizedBox(height: ScreenUtil().setSp(5)),
-                                    Text(
-                                      'juandelacruz@email.com',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    Text(
-                                      '+63 912 345 6789',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
+                                    SizedBox(height: 4),
+                                    Text('juan.delacruz@email.com',
+                                        style: TextStyle(
+                                            fontSize: 14, color: Colors.grey)),
+                                    SizedBox(height: 2),
+                                    Text('+63 912 345 6789',
+                                        style: TextStyle(
+                                            fontSize: 14, color: Colors.grey)),
                                   ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(15)),
-                            Container(
-                              padding: EdgeInsets.all(10),
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Color(0xFFF9FAFB),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on_outlined,
-                                    color: Color(0xFF1555F3),
-                                    size: 18,
-                                  ),
-                                  SizedBox(width: ScreenUtil().setSp(5)),
-                                  Text(
-                                    'Tondo, Manila',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Quick Settings',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(5)),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.notifications_none_outlined,
-                                      color: Color(0xFF1555F3),
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: ScreenUtil().setSp(5)),
-                                    Text(
-                                      'Push Notifications',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch(
-                                    value: isSwitched1,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    activeThumbColor: Colors.white,
-                                    activeTrackColor: Color(0xFF1555F3),
-                                    inactiveThumbColor: Colors.white54,
-                                    inactiveTrackColor: Color(0xFFE5E7EB),
-                                    trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.white),
-                                    onChanged: (bool value) {
-                                      setState(() {
-                                        isSwitched1 = value;
-                                      });
-                                    },
-                                  ),
-                                )
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.phone_outlined,
-                                      color: Color(0xFF1555F3),
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: ScreenUtil().setSp(5)),
-                                    Text(
-                                      'SMS Alerts',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch(
-                                    value: isSwitched2,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    activeThumbColor: Colors.white,
-                                    activeTrackColor: Color(0xFF1555F3),
-                                    inactiveThumbColor: Colors.white54,
-                                    inactiveTrackColor: Color(0xFFE5E7EB),
-                                    trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.white),
-                                    onChanged: (bool value) {
-                                      setState(() {
-                                        isSwitched2 = value;
-                                      });
-                                    },
-                                  ),
-                                )
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.shield_outlined,
-                                      color: Color(0xFF1555F3),
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: ScreenUtil().setSp(5)),
-                                    Text(
-                                      'High Risk Alerts Only',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch(
-                                    value: isSwitched3,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    activeThumbColor: Colors.white,
-                                    activeTrackColor: Color(0xFF1555F3),
-                                    inactiveThumbColor: Colors.white54,
-                                    inactiveTrackColor: Color(0xFFE5E7EB),
-                                    trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.white),
-                                    onChanged: (bool value) {
-                                      setState(() {
-                                        isSwitched3 = value;
-                                      });
-                                    },
-                                  ),
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Account',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(5)),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Personal Information',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.person_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Location Settings',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.location_on_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Notification Preferences',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.notifications_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      color: Colors.white,
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Support',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            SizedBox(height: ScreenUtil().setSp(5)),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Help Center',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.help_outline, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                            ListTile(
-                              onTap: () {
-                                
-                              },
-                              title: Text(
-                                'Emergency Contacts',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              leading: Icon(Icons.phone_outlined, size: 20, color: Colors.black54),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.black54),
-                              visualDensity: VisualDensity(
-                                horizontal: -4.0,
-                                vertical: -4.0
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      elevation: 0,
-                      color: Color(0xFFFEF2F2),
-                      child: InkWell(
-                        onTap: () {},
-                        borderRadius: BorderRadius.circular(10),
-                        child: Padding(
-                          padding: const EdgeInsets.all(15),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                              Icon(Icons.exit_to_app, color: Colors.red,),
-                              SizedBox(width: ScreenUtil().setSp(5)),
-                              Text(
-                                'Log Out',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.red,
                                 ),
                               ),
                             ],
                           ),
-                        )
-                      ),
-                    ),
-                    SizedBox(height: ScreenUtil().setSp(10)),
-                    Card(
-                      elevation: 0,
-                      color: Color(0xFFEFF6FF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Color(0xFFDBEAFE),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        child: Column(
-                          children: [
-                            Text(
-                              'Your data is protected under the Data Privacy Act of 2012. We only use your location to send relevant health alerts.',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w400,
-                                color: Color(0xFF1980DD),
-                              ),
+
+                          const SizedBox(height: 12),
+
+                          // Location
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Color(0xFFF9FAFB),
                             ),
-                          ],
-                        ),
-                      )
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  color: Color(0xFF1555F3),
+                                  size: 18,
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Tondo, Manila',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Quick Settings
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Quick Settings',
+                            style:
+                                TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildToggle(
+                              icon: Icons.notifications,
+                              label: 'Push Notifications',
+                              value: pushNotifications,
+                              onChanged: (val) {
+                                setState(() {
+                                  pushNotifications = val;
+                                });
+                              }),
+                          _buildToggle(
+                              icon: Icons.phone,
+                              label: 'SMS Alerts',
+                              value: smsAlerts,
+                              onChanged: (val) {
+                                setState(() {
+                                  smsAlerts = val;
+                                });
+                              }),
+                          _buildToggle(
+                              icon: Icons.shield,
+                              label: 'High Risk Alerts Only',
+                              value: highRiskAlerts,
+                              onChanged: (val) {
+                                setState(() {
+                                  highRiskAlerts = val;
+                                });
+                              }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSection('Account', [
+                      _buildListTile(Icons.person, 'Personal Information'),
+                      _buildListTile(Icons.location_on, 'Location Settings'),
+                      _buildListTile(Icons.notifications, 'Notification Preferences'),
+                    ]),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSection('Support', [
+                      _buildListTile(Icons.help_outline, 'Help Center'),
+                      _buildListTile(Icons.phone, 'Emergency Contacts'),
+                    ]),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextButton(
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(Color(0xFFFEF2F2)),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)
+                          ),
+                        )
+                      ), 
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.exit_to_app, color: Colors.red,),
+                          SizedBox(width: 5),
+                          Text(
+                            'Log Out',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            )
           ],
         ),
-      )
+      ),
+    );
+  }
+
+  Widget _buildToggle(
+      {required IconData icon,
+      required String label,
+      required bool value,
+      required ValueChanged<bool> onChanged}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(children: [
+            Icon(icon, color: const Color(0xFF2563EB)),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontSize: 14)),
+          ]),
+          Switch(value: value, 
+          onChanged: onChanged, 
+          thumbColor: const WidgetStatePropertyAll<Color>(Colors.white),
+          activeTrackColor: Color(0xFF2563EB),
+          inactiveTrackColor: Color(0xFFE5E7EB),
+          trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> tiles) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...tiles,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListTile(IconData icon, String title) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: Colors.grey.shade600),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+      onTap: () {},
     );
   }
 }

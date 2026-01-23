@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
@@ -397,174 +396,6 @@ class _MapScreenState extends State<MapScreen> {
                 markerDirection: MarkerDirection.heading,
               ),
             ),
-            Positioned(
-              top: 30,
-              left: 20,
-              child: Card(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Risk Levels',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: ScreenUtil().setSp(5)),
-                      Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.red, size: 15),
-                          SizedBox(width: ScreenUtil().setSp(5)),
-                          Text('High', style: GoogleFonts.inter(fontSize: 10)),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.amber, size: 15),
-                          SizedBox(width: ScreenUtil().setSp(5)),
-                          Text(
-                            'Moderate',
-                            style: GoogleFonts.inter(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.green, size: 15),
-                          SizedBox(width: ScreenUtil().setSp(5)),
-                          Text('Low', style: GoogleFonts.inter(fontSize: 10)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 30,
-              right: 20,
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: isLoading
-                    ? CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF1555F3),
-                          padding: EdgeInsets.all(10),
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : InkWell(
-                        onTap: _userCurrentLocation,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.my_location,
-                            color: Color(0xFF1555F3),
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 40,
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(48),
-                ),
-                color: Colors.white,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                    horizontal: 30,
-                  ),
-                  width: double.infinity,
-                  child: IntrinsicHeight(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Spacer(),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Outbreaks',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              '2',
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                color: Colors.red,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Spacer(flex: 1),
-                        VerticalDivider(),
-                        Spacer(flex: 1),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Moderate',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              '2',
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                color: Colors.amber,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Spacer(flex: 1),
-                        VerticalDivider(),
-                        Spacer(flex: 1),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Total Cases',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              '91',
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Spacer(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
             RichAttributionWidget(
               attributions: [
                 TextSourceAttribution(
@@ -575,6 +406,71 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ],
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black26, Colors.transparent],
+              ),
+            ),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search location...',
+                hintStyle: GoogleFonts.inter(),
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+
+        // RIGHT FLOATING NAV BUTTON
+        Positioned(
+          right: 16,
+          top: 140,
+          child: isLoading
+          ? CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.white,
+              child: CircularProgressIndicator(
+                color: Color(0xFF2563EB),
+                padding: EdgeInsets.all(12),
+                strokeWidth: 2,
+              ),
+            )
+          : InkWell(
+            onTap: _userCurrentLocation,
+            child: _circleButton(Icons.my_location, Color(0xFF2563EB)),
+          )
+        ),
+
+
+        // LEFT LEGEND CARD
+        Positioned(
+          left: 16,
+          top: 140,
+          child: _legendCard(),
+        ),
+
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 60,
+          child: _bottomStats(),
         ),
       ],
     );
@@ -596,4 +492,115 @@ class RiskLocation {
     required this.numOfCases,
     required this.color,
   });
+}
+
+Widget _circleButton(IconData icon, Color color) {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+    ),
+    padding: const EdgeInsets.all(12),
+    child: Icon(icon, color: color),
+  );
+}
+
+Widget _legendCard() {
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Active Cases by Area', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
+        Text('Tap markers for details', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey)),
+        SizedBox(height: 4),
+        _LegendRow(label: 'High Risk', color: Colors.red, text: '30+'),
+        _LegendRow(label: 'Moderate', color: Colors.orange, text: '6-30'),
+        _LegendRow(label: 'Low Risk', color: Colors.green, text: '1-5'),
+      ],
+    ),
+  );
+}
+
+class _LegendRow extends StatelessWidget {
+  final String label;
+  final Color color;
+  final String text;
+
+  const _LegendRow({required this.label, required this.color, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: Text(text, style: GoogleFonts.inter(fontSize: 6, color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: GoogleFonts.inter(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _bottomStats() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.9),
+      borderRadius: BorderRadius.circular(40),
+      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: const [
+        _Stat(label: 'Outbreaks', value: '2', color: Colors.red),
+        _Divider(),
+        _Stat(label: 'Moderate', value: '2', color: Colors.orange),
+        _Divider(),
+        _Stat(label: 'Total Cases', value: '91', color: Colors.black87),
+      ],
+    ),
+  );
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _Stat({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 1, height: 28, color: Colors.grey.shade300);
+  }
 }
