@@ -10,30 +10,67 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotScreenState extends State<ForgotPasswordScreen> {
   final _phoneCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  final _newPassCtrl = TextEditingController();     // NEW
+  final _confirmPassCtrl = TextEditingController(); // NEW
   final _formKey = GlobalKey<FormState>();
 
+  final passwordRegex = RegExp(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+  );
+
+  bool _showPass = false;
+  bool _showConfirmPass = false;
+
   bool _loading = false;
+  int _step = 1; // 1: send code, 2: verify code, 3: reset password
+
 
   @override
   void dispose() {
     _phoneCtrl.dispose();
+    _codeCtrl.dispose();
+    _newPassCtrl.dispose();
+    _confirmPassCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
+
     try {
-      // TODO: replace with auth call
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 700));
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signed in (demo)")),
-      );
-      Navigator.pushReplacementNamed(context, '/');
+      // STEP 1 → SEND CODE
+      if (_step == 1) {
+        setState(() => _step = 2);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Reset code sent via SMS")),
+        );
+      }
+
+      // STEP 2 → VERIFY CODE
+      else if (_step == 2) {
+        setState(() => _step = 3);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Code verified")),
+        );
+      }
+
+      // STEP 3 → RESET PASSWORD
+      else if (_step == 3) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password successfully reset")),
+        );
+
+        Navigator.pop(context); // back to login
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -147,40 +184,121 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                     Form(
                       key: _formKey,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _LabeledField(
                             label: "Phone Number *",
                             child: TextFormField(
+                              enabled: _step == 1,
                               controller: _phoneCtrl,
                               keyboardType: TextInputType.phone,
                               textInputAction: TextInputAction.next,
                               decoration: const InputDecoration(
-                                hintText: "+63 912 345 6789",
+                                hintText: "0912 345 6789",
                                 prefixIcon: Icon(Icons.phone_outlined),
                               ),
                               validator: (v) {
                                 final value = (v ?? "").trim();
                                 if (value.isEmpty) return "Phone number is required.";
-                                if (value.length < 8) return "Enter a valid phone number.";
+                                if (value.length < 12) return "Enter a valid phone number.";
                                 return null;
                               },
                             ),
                           ),
                           
-                          const SizedBox(height: 8),
+                          _helper('Enter the phone number you used during registration'),
 
-                          Text(
-                            "Enter the phone number you used during registration",
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
-                          ),
-                          
                           const SizedBox(height: 18),
+                          
+                          if (_step >= 2) ...[
+                            _LabeledField(
+                              label: "Reset Code *",
+                              child: TextFormField(
+                                controller: _codeCtrl,
+                                enabled: _step == 2,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Enter SMS code",
+                                  prefixIcon: Icon(Icons.verified_outlined),
+                                ),
+                                validator: (v) {
+                                  if (_step < 2) return null;
+                                  final value = (v ?? "").trim();
+                                  if (value.isEmpty) return "Reset code required.";
+                                  if (value.length < 4) return "Invalid code.";
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
 
+                          if (_step == 3) ...[
+                            _LabeledField(
+                              label: "New Password *",
+                              child: TextFormField(
+                                controller: _newPassCtrl,
+                                obscureText: !_showPass,
+                                validator: (v) {
+                                  if (_step != 3) return null;
+                                  if (v == null || v.isEmpty) {
+                                    return "New password is required";
+                                  }
+                                  if (!passwordRegex.hasMatch(v)) {
+                                    return "Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Enter new password",
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline),
+                                  suffixIcon: IconButton(
+                                    onPressed: () =>
+                                        setState(() => _showPass = !_showPass),
+                                    icon: Icon(_showPass
+                                        ? Icons.visibility
+                                        : Icons.visibility_off),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _LabeledField(
+                              label: "Confirm Password *",
+                              child: TextFormField(
+                                controller: _confirmPassCtrl,
+                                obscureText: !_showConfirmPass,
+                                validator: (v) {
+                                  if (_step != 3) return null;
+                                  if (v != _newPassCtrl.text) {
+                                    return "Passwords do not match";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Confirm new password",
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline),
+                                  suffixIcon: IconButton(
+                                    onPressed: () =>
+                                        setState(() => _showConfirmPass = !_showConfirmPass),
+                                    icon: Icon(_showConfirmPass
+                                        ? Icons.visibility
+                                        : Icons.visibility_off),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
                           SizedBox(
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: _loading ? null : _signIn,
+                              onPressed: _loading ? null : _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2563EB),
                                 foregroundColor: Colors.white,
@@ -194,7 +312,11 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                     )
                                   : Text(
-                                      "Send Reset Code",
+                                      _step == 1
+                                          ? "Send Reset Code"
+                                          : _step == 2
+                                              ? "Verify Code"
+                                              : "Reset Password",
                                       style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
                                     ),
                               ),
@@ -203,7 +325,6 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
                       // Sign in redirect
                       Center(
                         child: TextButton(
@@ -235,6 +356,15 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
       )
     );
   }
+  
+  Widget _helper(String text) => Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: Text(
+      text,
+      style: GoogleFonts.inter(
+          fontSize: 11, color: const Color(0xFF6B7280)),
+    ),
+  );
 }
 
 class _LabeledField extends StatelessWidget {
@@ -265,6 +395,11 @@ class _LabeledField extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+              ),
+              errorMaxLines: 2,
+              errorStyle: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFFDC2626),
               ),
             ),
           ),

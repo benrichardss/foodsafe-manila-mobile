@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field, unused_element
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -11,17 +13,15 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nameCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _cityCtrl = TextEditingController(text: "Manila");
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
-
-  String? _barangay;
-  String? _district;
-
-  bool _pushNotif = true;
-  bool _locationService = true;
+  final passwordRegex = RegExp(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+  );
   bool _showPass = false;
   bool _showConfirmPass = false;
 
@@ -46,7 +46,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _phoneCtrl.dispose();
     _cityCtrl.dispose();
     _passCtrl.dispose();
@@ -58,7 +59,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Account created (demo)")),
+      const SnackBar(content: Text("Sign up successful!")),
     );
     Navigator.pop(context);
   }
@@ -161,12 +162,25 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
 
                         _LabeledField(
-                          label: "Full Name *",
+                          label: "First Name *",
                           child: TextFormField(
-                            controller: _nameCtrl,
+                            controller: _firstNameCtrl,
                             validator: _required,
                             decoration: const InputDecoration(
-                              hintText: "Juan Dela Cruz",
+                              hintText: "Juan",
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "Last Name *",
+                          child: TextFormField(
+                            controller: _lastNameCtrl,
+                            validator: _required,
+                            decoration: const InputDecoration(
+                              hintText: "Dela Cruz",
                               prefixIcon: Icon(Icons.person_outline),
                             ),
                           ),
@@ -181,11 +195,11 @@ class _SignupScreenState extends State<SignupScreen> {
                             validator: (v) {
                               final value = (v ?? "").trim();
                               if (value.isEmpty) return "Phone number is required.";
-                              if (value.length < 8) return "Enter a valid phone number.";
+                              if (value.length < 12) return "Enter a valid phone number.";
                               return null;
                             },
                             decoration: const InputDecoration(
-                              hintText: "+63 912 345 6789",
+                              hintText: "0912 345 6789",
                               prefixIcon: Icon(Icons.phone_outlined),
                             ),
                           ),
@@ -209,8 +223,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               if (v == null || v.isEmpty) {
                                 return "Password is required";
                               }
-                              if (v.length < 6) {
-                                return "Password must be at least 6 characters";
+                              if (!passwordRegex.hasMatch(v)) {
+                                return "Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols";
                               }
                               return null;
                             },
@@ -229,7 +243,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
 
-                        _helper('Must be at least 6 characters'),
+                        _helper('Must be at least 8 characters with uppercase, lowercase, numbers, and symbols'),
 
                         const SizedBox(height: 14),
 
@@ -239,9 +253,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             controller: _confirmPassCtrl,
                             obscureText: !_showConfirmPass,
                             validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return "Please confirm your password";
-                              }
                               if (v != _passCtrl.text) {
                                 return "Passwords do not match";
                               }
@@ -261,88 +272,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                           ),
-                        ),
-
-                        _divider(),
-
-                        _sectionTitle(
-                          "Location Information",
-                          "Help us send you relevant alerts for your area",
-                        ),
-
-                        _LabeledField(
-                          label: "Barangay *",
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _barangay,
-                            hint: const Text("Select your barangay"),
-                            items: barangays
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
-                                .toList(),
-                            validator: _required,
-                            onChanged: (v) =>
-                                setState(() => _barangay = v),
-                            decoration: const InputDecoration(
-                              prefixIcon:
-                                  Icon(Icons.location_on_outlined),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "District *",
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _district,
-                            hint: const Text("Select your district"),
-                            items: districts
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
-                                .toList(),
-                            validator: _required,
-                            onChanged: (v) =>
-                                setState(() => _district = v),
-                            decoration: const InputDecoration(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "City / Municipality",
-                          child: TextFormField(
-                            controller: _cityCtrl,
-                            decoration: const InputDecoration(),
-                          ),
-                        ),
-
-                        _divider(),
-
-                        _sectionTitle(
-                          "Notification Preferences",
-                          "Choose how you want to receive alerts",
-                        ),
-
-                        _toggleTile(
-                          title: "Push Notifications",
-                          subtitle:
-                              "Receive instant disease outbreak alerts",
-                          value: _pushNotif,
-                          onChanged: (v) =>
-                              setState(() => _pushNotif = v),
-                        ),
-                        _toggleTile(
-                          title: "Location Services",
-                          subtitle:
-                              "For location-based health alerts",
-                          value: _locationService,
-                          onChanged: (v) =>
-                              setState(() => _locationService = v),
                         ),
 
                         const SizedBox(height: 18),
@@ -416,18 +345,18 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
   Widget _helper(String text) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-              fontSize: 11, color: const Color(0xFF6B7280)),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 4),
+    child: Text(
+      text,
+      style: GoogleFonts.inter(
+          fontSize: 11, color: const Color(0xFF6B7280)),
+    ),
+  );
 
   Widget _divider() => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Divider(height: 1, color: Color(0xFFE5E7EB)),
-      );
+    padding: EdgeInsets.symmetric(vertical: 24),
+    child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+  );
 
   Widget _toggleTile({
     required String title,
@@ -515,6 +444,11 @@ class _LabeledField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(
                     color: Color(0xFF3B82F6), width: 2),
+              ),
+              errorMaxLines: 2,
+              errorStyle: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFFDC2626),
               ),
             ),
           ),

@@ -138,13 +138,13 @@ class _LogInScreenState extends State<LoginScreen> {
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.next,
                                 decoration: const InputDecoration(
-                                  hintText: "+63 912 345 6789",
+                                  hintText: "0912 345 6789",
                                   prefixIcon: Icon(Icons.phone_outlined),
                                 ),
                                 validator: (v) {
                                   final value = (v ?? "").trim();
                                   if (value.isEmpty) return "Phone number is required.";
-                                  if (value.length < 8) return "Enter a valid phone number.";
+                                  if (value.length < 12) return "Enter a valid phone number.";
                                   return null;
                                 },
                               ),
@@ -308,6 +308,11 @@ class _LabeledField extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+              ),
+              errorMaxLines: 2,
+              errorStyle: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFFDC2626),
               ),
             ),
           ),
