@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/analytics_widgets.dart';
+import '../data/mock_analytics_data.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -10,11 +11,13 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  TimeRange range = TimeRange.month;
+  TimeRange range = TimeRange.week;
   ViewTab tab = ViewTab.trends;
 
   @override
   Widget build(BuildContext context) {
+    final data = MockAnalyticsData.getData(range);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
@@ -44,27 +47,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () {},
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDBEAFE),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Icon(
-                  Icons.download,
-                  size: 20,
-                  color: Color(0xFF2563EB),
-                ),
-              ),
-            ),
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(54),
           child: Padding(
@@ -85,9 +67,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 CurrentCasesCard(
-                  cases: 110,
-                  changePercent: 34.1,
-                  subtitle: 'Increase from previous month',
+                  cases: data.currentCases,
+                  changePercent: data.percentChange,
+                  subtitle: range == TimeRange.week
+                      ? 'Increase from previous week'
+                      : range == TimeRange.month
+                      ? 'Increase from previous month'
+                      : 'Increase from previous year',
                   onTap: () {},
                 ),
                 const SizedBox(height: 14),
@@ -101,8 +87,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ? 'Case Trends'
                       : tab == ViewTab.districts
                           ? 'Cases by District'
-                          : 'Cases by Illness',
-                  child: Chart(tab: tab),
+                          : 'Illness Distribution',
+                  child: Chart(tab: tab, bundle: data,),
                 ),
                 const SizedBox(height: 14),
                 SectionTitle(text: 'Key Insights'),
@@ -113,8 +99,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   iconBg: const Color(0xFF2563EB),
                   icon: Icons.trending_up,
                   title: 'Highest Cases',
-                  description:
-                      'Tondo district has the highest cases (245) this month',
+                  description: (() {
+                    final highestDistrict = data.districts.reduce((a, b) => a.value > b.value ? a : b);
+                    final period = range == TimeRange.week
+                        ? 'this week'
+                        : range == TimeRange.month
+                            ? 'this month'
+                            : 'this year';
+                    return '${highestDistrict.name} district has the highest case $period (${highestDistrict.value.toInt()})';
+                  })(),
                 ),
                 const SizedBox(height: 10),
                 InsightCard(
@@ -123,26 +116,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   iconBg: const Color(0xFF7C3AED),
                   icon: Icons.calendar_month,
                   title: 'Most Common',
-                  description: 'Food Poisoning accounts for 35% of all cases',
+                  description: (() {
+                    final mostCommonIllness = data.illnesses.reduce((a, b) => a.value > b.value ? a : b);
+                    final totalCases = data.illnesses.fold<double>(0, (sum, item) => sum + item.value);
+                    final percentage = ((mostCommonIllness.value / totalCases) * 100).toStringAsFixed(0);
+                    final period = range == TimeRange.week
+                        ? 'this week'
+                        : range == TimeRange.month
+                            ? 'this month'
+                            : 'this year';
+                    return '${mostCommonIllness.name} accounts for $percentage% of all cases $period';
+                  })(),
                 ),
                 const SizedBox(height: 14),
                 Row(
-                  children: const [
+                  children: [
                     Expanded(
                       child: StatCard(
                         label: 'Total Cases',
-                        value: '889',
-                        footnote: 'Last 5 years',
-                        footnoteColor: Color(0xFF16A34A),
+                        value: data.trends.fold<double>(0, (sum, t) => sum + t.value).toInt().toString(),
+                        footnote: range == TimeRange.week
+                            ? 'This Week'
+                            : range == TimeRange.month
+                                ? 'This Month'
+                                : 'This Year',
+                        footnoteColor: const Color(0xFF16A34A),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: StatCard(
-                        label: 'Avg Per Year',
-                        value: '29.6',
-                        footnote: 'cases/year',
-                        footnoteColor: Color(0xFF6B7280),
+                        label: 'Avg Per Period',
+                        value: (data.trends.fold<double>(0, (sum, t) => sum + t.value) / data.trends.length)
+                            .toStringAsFixed(1),
+                        footnote: 'cases/${range.name}',
+                        footnoteColor: const Color(0xFF6B7280),
                       ),
                     ),
                   ],

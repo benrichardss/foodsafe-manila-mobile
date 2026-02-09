@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:foodsafe_manila/screens/personal_information_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'emergency_contacts_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -37,10 +40,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Profile',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
@@ -48,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   Text(
                     'Manage your account and preferences',
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),
@@ -90,10 +93,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
                                     'J',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
@@ -105,10 +108,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
+                                  children: [
                                     Text(
                                       'Juan Dela Cruz',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -116,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     SizedBox(height: 4),
                                     Text(
                                       'juan.delacruz@email.com',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: Colors.grey,
                                       ),
@@ -124,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     SizedBox(height: 2),
                                     Text(
                                       '+63 912 345 6789',
-                                      style: TextStyle(
+                                      style: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: Colors.grey,
                                       ),
@@ -167,10 +170,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Quick Settings
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildMenuTile(
+                      icon: Icons.person,
+                      title: "Personal Information",
+                      subtitle: "Update your account details",
+                      page: const PersonalInformationScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildMenuTile(
+                      icon: Icons.phone,
+                      title: "Emergency Contacts",
+                      subtitle: "Important health and emergency numbers",
+                      page: const EmergencyContactsScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
@@ -190,9 +210,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Quick Settings',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -231,26 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildSection('Account', [
-                      _buildListTile(Icons.person, 'Personal Information'),
-                      _buildListTile(Icons.location_on, 'Location Settings'),
-                      _buildListTile(
-                        Icons.notifications,
-                        'Notification Preferences',
-                      ),
-                    ]),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildSection('Support', [
-                      _buildListTile(Icons.help_outline, 'Help Center'),
-                      _buildListTile(Icons.phone, 'Emergency Contacts'),
-                    ]),
                   ),
                   const SizedBox(height: 16),
                   Padding(
@@ -295,6 +295,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget page,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24), // match other cards
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent, // important
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          splashColor: const Color(0xFF2563EB).withValues(alpha: 0.15),
+          highlightColor: Colors.black.withValues(alpha: 0.04),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => page),
+            );
+          },
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // icon box
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                      ),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    child: Icon(icon, color: Colors.white),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildToggle({
     required IconData icon,
     required String label,
@@ -310,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(icon, color: const Color(0xFF2563EB)),
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontSize: 14)),
+              Text(label, style: GoogleFonts.inter(fontSize: 14)),
             ],
           ),
           Switch(
@@ -325,41 +412,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> tiles) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          ...tiles,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListTile(IconData icon, String title) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: Colors.grey.shade600),
-      title: Text(title, style: const TextStyle(fontSize: 14)),
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-      onTap: () {},
     );
   }
 }

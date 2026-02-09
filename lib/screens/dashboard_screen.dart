@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:foodsafe_manila/screens/analytics_screen.dart';
 import 'package:foodsafe_manila/screens/predict_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,7 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       bottomNavigationBar: Container(
-        height: 64,
+        height: 64.sp,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(

@@ -74,7 +74,7 @@ class SegButton extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -170,8 +170,8 @@ class ChartCard extends StatelessWidget {
   }
 }
 
-class Chart extends StatelessWidget {
-  const Chart({super.key});
+class ForecastChart extends StatelessWidget {
+  const ForecastChart({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -187,10 +187,14 @@ class Chart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: true,
-            getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.withValues(alpha: 0.15), strokeWidth: 1),
-            getDrawingVerticalLine: (value) =>
-                FlLine(color: Colors.grey.withValues(alpha: 0.15), strokeWidth: 1),
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.grey.withValues(alpha: 0.15),
+              strokeWidth: 1,
+            ),
+            getDrawingVerticalLine: (value) => FlLine(
+              color: Colors.grey.withValues(alpha: 0.15),
+              strokeWidth: 1,
+            ),
           ),
 
           borderData: FlBorderData(
@@ -229,7 +233,7 @@ class Chart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       years[value.toInt()],
-                      style: const TextStyle(fontSize: 11),
+                      style: GoogleFonts.inter(fontSize: 11),
                     ),
                   );
                 },
@@ -246,7 +250,7 @@ class Chart extends StatelessWidget {
                     padding: const EdgeInsetsGeometry.only(right: 8),
                     child: Text(
                       value.toInt().toString(),
-                      style: const TextStyle(fontSize: 11),
+                      style: GoogleFonts.inter(fontSize: 11),
                       textAlign: TextAlign.right,
                     ),
                   );
@@ -257,7 +261,6 @@ class Chart extends StatelessWidget {
 
           // Line data
           lineBarsData: [
-            
             LineChartBarData(
               isCurved: true,
               barWidth: 1.2,
@@ -310,6 +313,165 @@ class Chart extends StatelessWidget {
                   return FlDotCirclePainter(
                     radius: 4,
                     color: const Color(0xFF3B6DFF),
+                    strokeWidth: 0,
+                  );
+                },
+              ),
+
+              belowBarData: BarAreaData(show: false),
+
+              spots: const [
+                FlSpot(0, 90),
+                FlSpot(1, 72),
+                FlSpot(2, 50),
+                FlSpot(3, 65),
+                FlSpot(4, 85),
+                FlSpot(5, 92),
+                FlSpot(6, 98),
+                FlSpot(7, 88),
+                FlSpot(8, 70),
+                FlSpot(9, 60),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HistoryChart extends StatelessWidget {
+  const HistoryChart({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      child: LineChart(
+        LineChartData(
+          minX: 0,
+          maxX: 9,
+          minY: 0,
+          maxY: 120,
+
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.grey.withValues(alpha: 0.15),
+              strokeWidth: 1,
+            ),
+            getDrawingVerticalLine: (value) => FlLine(
+              color: Colors.grey.withValues(alpha: 0.15),
+              strokeWidth: 1,
+            ),
+          ),
+
+          borderData: FlBorderData(
+            show: true,
+            border: Border(
+              left: BorderSide(color: Colors.grey.shade400),
+              bottom: BorderSide(color: Colors.grey.shade400),
+              right: BorderSide.none,
+              top: BorderSide.none,
+            ),
+          ),
+
+          titlesData: FlTitlesData(
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  if (value % 2 != 0) return const SizedBox.shrink();
+                  const years = [
+                    '2015',
+                    '2016',
+                    '2017',
+                    '2018',
+                    '2019',
+                    '2020',
+                    '2021',
+                    '2022',
+                    '2023',
+                    '2024',
+                  ];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      years[value.toInt()],
+                      style: GoogleFonts.inter(fontSize: 11),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 30,
+                getTitlesWidget: (value, meta) {
+                  return Padding(
+                    padding: const EdgeInsetsGeometry.only(right: 8),
+                    child: Text(
+                      value.toInt().toString(),
+                      style: GoogleFonts.inter(fontSize: 11),
+                      textAlign: TextAlign.right,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Line data
+          lineBarsData: [
+            LineChartBarData(
+              isCurved: true,
+              barWidth: 1.2,
+              color: Colors.blue,
+              dashArray: [4, 4],
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 4,
+                    color: Colors.blue,
+                    strokeWidth: 0,
+                  );
+                },
+              ),
+              spots: const [
+                FlSpot(0, 115),
+                FlSpot(1, 95),
+                FlSpot(2, 70),
+                FlSpot(3, 90),
+                FlSpot(4, 110),
+                FlSpot(5, 118),
+                FlSpot(6, 120),
+                FlSpot(7, 108),
+                FlSpot(8, 88),
+                FlSpot(9, 78),
+              ],
+            ),
+
+            LineChartBarData(
+              isCurved: true,
+              curveSmoothness: 0.3,
+              color: Colors.green,
+              barWidth: 2.5,
+
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 4,
+                    color: Colors.green,
                     strokeWidth: 0,
                   );
                 },
@@ -392,7 +554,10 @@ class DistrictRiskCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: colors.pillBg,
                           borderRadius: BorderRadius.circular(999),
@@ -447,17 +612,192 @@ class DistrictRiskCard extends StatelessWidget {
                       value: (district.score / 100).clamp(0, 1),
                       minHeight: 8,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(colors.progress),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colors.progress,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const LegendDot({super.key, required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+      ],
+    );
+  }
+}
+
+class MetricCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  const MetricCard({
+    super.key,
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+              Text(value,
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ModelPerformanceCard extends StatelessWidget {
+  const ModelPerformanceCard({
+    super.key,
+    required this.predictionsMade,
+    required this.accuratePredictions,
+    required this.lastUpdated,
+  });
+
+  final int predictionsMade;
+  final int accuratePredictions;
+  final String lastUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDBEAFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Model Performance',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Predictions Made',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                predictionsMade.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Accurate Predictions',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                accuratePredictions.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF16A34A),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Last Updated',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                lastUpdated,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

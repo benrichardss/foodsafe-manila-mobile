@@ -1,8 +1,13 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-enum TimeRange { month, quarter, year }
+import '../data/mock_analytics_data.dart';
+
+enum TimeRange { week, month, year }
+
 enum ViewTab { trends, districts, illnesses }
 
 class TimeRangeChips extends StatelessWidget {
@@ -19,9 +24,9 @@ class TimeRangeChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        chip('Month', TimeRange.month),
+        chip('Week', TimeRange.week),
         const SizedBox(width: 8),
-        chip('Quarter', TimeRange.quarter),
+        chip('Month', TimeRange.month),
         const SizedBox(width: 8),
         chip('Year', TimeRange.year),
       ],
@@ -115,14 +120,21 @@ class CurrentCasesCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0x33EF4444),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.trending_up, size: 16, color: Colors.white),
+                      const Icon(
+                        Icons.trending_up,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${changePercent.toStringAsFixed(1)}%',
@@ -245,42 +257,59 @@ class ChartCard extends StatelessWidget {
 }
 
 class Chart extends StatelessWidget {
-  final ViewTab tab;
+final ViewTab tab;
+final AnalyticsBundle bundle;
 
-  const Chart({super.key, required this.tab});
+const Chart({super.key, required this.tab, required this.bundle});
 
-  @override
-  Widget build(BuildContext context) {
-    switch (tab) {
-      case ViewTab.trends:
-        return lineChart();
-
-      case ViewTab.districts:
-        return pieChartByDistrict();
-
-      case ViewTab.illnesses:
-        return pieChartByIllness();
+@override
+Widget build(BuildContext context) {
+  switch (tab) {
+    case ViewTab.trends:
+      return lineChart(bundle.trends);
+    case ViewTab.districts:
+      return barChart(bundle.districts);
+    case ViewTab.illnesses:
+      return pieChart(bundle.illnesses);
     }
   }
 }
 
-Widget lineChart() {
+double getInterval(double maxValue, int steps) {
+  final rawInterval = maxValue / steps;
+  return (rawInterval / steps).ceil() * 5;
+}
+
+double getMaxY(double maxValue, int steps) {
+  final interval = getInterval(maxValue, steps);
+  return interval * steps;
+}
+
+Widget lineChart(List<TrendPoint> data) {
+  final maxValue = data.map((e) => e.value).reduce(max);
+  final interval = getInterval(maxValue, 5);
+  final maxY = getMaxY(maxValue, 5);
+
   return Container(
     padding: EdgeInsets.all(10),
     child: LineChart(
       LineChartData(
         minX: 0,
-        maxX: 9,
+        maxX: (data.length - 1).toDouble(),
         minY: 0,
-        maxY: 250,
+        maxY: maxY,
 
         gridData: FlGridData(
           show: true,
           drawVerticalLine: true,
-          getDrawingHorizontalLine: (value) =>
-              FlLine(color: Colors.grey.withValues(alpha: 0.15), strokeWidth: 1),
-          getDrawingVerticalLine: (value) =>
-              FlLine(color: Colors.grey.withValues(alpha: 0.15), strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.15),
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.15),
+            strokeWidth: 1,
+          ),
         ),
 
         borderData: FlBorderData(
@@ -302,24 +331,12 @@ Widget lineChart() {
               showTitles: true,
               interval: 1,
               getTitlesWidget: (value, meta) {
-                if (value % 2 != 0) return const SizedBox.shrink();
-                const years = [
-                  '2015',
-                  '2016',
-                  '2017',
-                  '2018',
-                  '2019',
-                  '2020',
-                  '2021',
-                  '2022',
-                  '2023',
-                  '2024',
-                ];
+                if (value.toInt() >= data.length) return const SizedBox();
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    years[value.toInt()],
-                    style: const TextStyle(fontSize: 11),
+                    data[value.toInt()].label,
+                    style: GoogleFonts.inter(fontSize: 11),
                   ),
                 );
               },
@@ -330,13 +347,13 @@ Widget lineChart() {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
-              interval: 50,
+              interval: interval,
               getTitlesWidget: (value, meta) {
                 return Padding(
                   padding: const EdgeInsetsGeometry.only(right: 8),
                   child: Text(
                     value.toInt().toString(),
-                    style: const TextStyle(fontSize: 11),
+                    style: GoogleFonts.inter(fontSize: 11),
                     textAlign: TextAlign.right,
                   ),
                 );
@@ -366,18 +383,10 @@ Widget lineChart() {
 
             belowBarData: BarAreaData(show: false),
 
-            spots: const [
-              FlSpot(0, 46), // Jan
-              FlSpot(1, 199), // Feb
-              FlSpot(2, 137), // Mar
-              FlSpot(3, 106), // Apr
-              FlSpot(4, 48), // May
-              FlSpot(5, 8), // Jun
-              FlSpot(6, 1), // Jul
-              FlSpot(7, 21), // Aug
-              FlSpot(8, 28), // Sep
-              FlSpot(9, 236), // Oct
-            ],
+            spots: List.generate(
+              data.length,
+              (i) => FlSpot(i.toDouble(), data[i].value),
+            ),
           ),
         ],
       ),
@@ -385,64 +394,157 @@ Widget lineChart() {
   );
 }
 
-Widget pieChartByDistrict() {
-  return PieChart(
-    PieChartData(
-      sectionsSpace: 2,
-      centerSpaceRadius: 40,
-      sections: [
-        PieChartSectionData(
-          value: 40,
-          title: 'Tondo',
-          color: Colors.blue,
+Widget barChart(List<DistrictData> data) {
+  final maxValue = data.map((e) => e.value).reduce(max);
+  final interval = getInterval(maxValue, 5);
+  final maxY = getMaxY(maxValue, 5);
+  
+  return Padding(
+    padding: const EdgeInsets.all(12),
+    child: BarChart(
+      BarChartData(
+        maxY: maxY,
+        alignment: BarChartAlignment.spaceAround,
+
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.15),
+            strokeWidth: 1,
+          ),
         ),
-        PieChartSectionData(
-          value: 30,
-          title: 'Sampaloc',
-          color: Colors.orange,
+
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            left: BorderSide(color: Colors.grey.shade400),
+            bottom: BorderSide(color: Colors.grey.shade400),
+            right: BorderSide.none,
+            top: BorderSide.none,
+          ),
         ),
-        PieChartSectionData(
-          value: 20,
-          title: 'Ermita',
-          color: Colors.green,
+
+        titlesData: FlTitlesData(
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 35,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                return Padding(
+                  padding: const EdgeInsetsGeometry.only(right: 8),
+                  child: Text(
+                    value.toInt().toString(),
+                    style: GoogleFonts.inter(fontSize: 11),
+                    textAlign: TextAlign.right,
+                  ),
+                );
+              },
+            ),
+          ),
+
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() >= data.length) return const SizedBox();
+                return Text(
+                  data[value.toInt()].name,
+                  style: GoogleFonts.inter(fontSize: 11),
+                );
+              },
+            ),
+          ),
         ),
-        PieChartSectionData(
-          value: 10,
-          title: 'Others',
-          color: Colors.grey,
+
+        barGroups: List.generate(
+          data.length,
+          (i) => BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: data[i].value,
+                width: 18,
+                borderRadius: BorderRadius.circular(6),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     ),
   );
-}
+} 
 
-Widget pieChartByIllness() {
-  return PieChart(
-    PieChartData(
-      centerSpaceRadius: 40,
-      sections: [
-        PieChartSectionData(
-          value: 35,
-          title: 'Food Poisoning',
-          color: Colors.red,
+Widget pieChart(List<IllnessData> data) {
+  final total = data.fold<double>(0, (sum, item) => sum + item.value);
+
+  return Column(
+    children: [
+      Expanded(
+        child: PieChart(
+          PieChartData(
+            sectionsSpace: 1,
+            centerSpaceRadius: 0,
+            startDegreeOffset: -135,
+
+            sections: data.map((e) {
+              final percentage = (e.value / total) * 100;
+              return PieChartSectionData(
+                value: e.value,
+                color: e.color,
+                radius: 90,
+                title: '${percentage.toStringAsFixed(0)}%',
+                titleStyle: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                titlePositionPercentageOffset: 0.7,
+              );
+            }).toList(),
+          ),
         ),
-        PieChartSectionData(
-          value: 25,
-          title: 'Salmonella',
-          color: Colors.purple,
-        ),
-        PieChartSectionData(
-          value: 20,
-          title: 'Dengue',
-          color: Colors.teal,
-        ),
-        PieChartSectionData(
-          value: 20,
-          title: 'Others',
-          color: Colors.grey,
-        ),
-      ],
-    ),
+      ),
+
+      const SizedBox(height: 12),
+
+      Wrap(
+        spacing: 14,
+        runSpacing: 8,
+        children: data.map((e) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: e.color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                e.name,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    ],
   );
 }
 
@@ -454,10 +556,7 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-      ),
+      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
     );
   }
 }
@@ -558,7 +657,10 @@ class StatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF4B5563)),
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: const Color(0xFF4B5563),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
