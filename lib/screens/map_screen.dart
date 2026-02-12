@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -14,63 +13,13 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
-  final Location _location = Location();
   bool isLoading = true;
-  LatLng? _currentLocation;
-
-  @override
-  @override
-  void initState() {
-    super.initState();
-    _initializeLocation();
-  }
-
-  Future<void> _initializeLocation() async {
-    if (!await _checktheRequestPermissions()) return;
-
-    _location.onLocationChanged.listen((LocationData locationData) {
-      if (locationData.latitude != null && locationData.longitude != null) {
-        setState(() {
-          _currentLocation = LatLng(
-            locationData.latitude!,
-            locationData.longitude!,
-          );
-          isLoading = false;
-        });
-      }
-    });
-  }
-
-  Future<bool> _checktheRequestPermissions() async {
-    bool serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) return false;
-    }
-
-    PermissionStatus permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) return false;
-    }
-    return true;
-  }
-
-  Future<void> _userCurrentLocation() async {
-    if (_currentLocation != null) {
-      _mapController.move(_currentLocation!, 15);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Current location not available.')),
-      );
-    }
-  }
 
   final List<RiskLocation> riskLocations = [
     RiskLocation(
       position: LatLng(14.5995, 120.9842),
       virus: 'Salmonella',
-      location: 'Barangay 123, Tondo',
+      location: 'Tondo',
       riskLevel: 'High Risk',
       description:
           'Multiple reported Salmonella cases linked to improperly stored street food.',
@@ -80,7 +29,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.6091, 120.9716),
       virus: 'E. coli',
-      location: 'Barangay 456, Sampaloc',
+      location: 'Sampaloc',
       riskLevel: 'High Risk',
       description:
           'Confirmed E. coli outbreak associated with contaminated water used in food preparation.',
@@ -90,7 +39,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.5833, 120.9822),
       virus: 'Norovirus',
-      location: 'Barangay 702, Malate',
+      location: 'Malate',
       riskLevel: 'High Risk',
       description:
           'Rapid spread of Norovirus linked to shared dining facilities.',
@@ -100,7 +49,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.6042, 120.9822),
       virus: 'Food Poisoning',
-      location: 'Barangay 296, Binondo',
+      location: 'Binondo',
       riskLevel: 'Moderate Risk',
       description:
           'Several food poisoning cases reported after dining at local eateries.',
@@ -110,7 +59,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.5896, 120.9754),
       virus: 'Campylobacter',
-      location: 'Barangay 812, Paco',
+      location: 'Paco',
       riskLevel: 'Moderate Risk',
       description:
           'Campylobacter cases suspected from undercooked poultry products.',
@@ -120,7 +69,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.5700, 120.9860),
       virus: 'Salmonella',
-      location: 'Barangay 833, Pandacan',
+      location: 'Pandacan',
       riskLevel: 'Moderate Risk',
       description:
           'Intermittent Salmonella infections reported over the past two weeks.',
@@ -130,7 +79,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.5906, 120.9798),
       virus: 'Norovirus',
-      location: 'Barangay 567, Quiapo',
+      location: 'Quiapo',
       riskLevel: 'Low Risk',
       description:
           'Isolated Norovirus cases with no ongoing community transmission.',
@@ -140,7 +89,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.6226, 120.9756),
       virus: 'Food Poisoning',
-      location: 'Barangay 591, Santa Mesa',
+      location: 'Santa Mesa',
       riskLevel: 'Low Risk',
       description:
           'Minor food poisoning cases reported and quickly resolved.',
@@ -150,7 +99,7 @@ class _MapScreenState extends State<MapScreen> {
     RiskLocation(
       position: LatLng(14.5622, 120.9956),
       virus: 'E. coli',
-      location: 'Barangay 874, San Andres Bukid',
+      location: 'San Andres Bukid',
       riskLevel: 'Low Risk',
       description:
           'Low number of E. coli cases under monitoring by local health units.',
@@ -293,52 +242,6 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          "Get Directions",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          side: const BorderSide(color: Color(0xFFD1D5DB)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          "View Details",
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -361,7 +264,12 @@ class _MapScreenState extends State<MapScreen> {
               initialCenter: LatLng(14.5995, 120.9842),
               initialZoom: 14,
               maxZoom: 20,
-              cameraConstraint: CameraConstraint.containLatitude(),
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  LatLng(14.50, 120.93), // bottom-left of Manila
+                  LatLng(14.72, 121.05), // top-right of Manila
+                ),
+              ),
             ),
             children: [
               TileLayer(
@@ -409,62 +317,10 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
-          Positioned(
-            top: -20,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black26, Colors.transparent],
-                ),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search location...',
-                  hintStyle: GoogleFonts.inter(),
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ),
-          ),
 
-
-          // RIGHT FLOATING NAV BUTTON
-          Positioned(
-            right: 16,
-            top: 120,
-            child: isLoading
-            ? CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.white,
-                child: CircularProgressIndicator(
-                  color: Color(0xFF2563EB),
-                  padding: EdgeInsets.all(12),
-                  strokeWidth: 2,
-                ),
-              )
-            : InkWell(
-              onTap: _userCurrentLocation,
-              child: _circleButton(Icons.my_location, Color(0xFF2563EB)),
-            )
-          ),
-
-
-          // LEFT LEGEND CARD
           Positioned(
             left: 16,
-            top: 120,
+            top: 32,
             child: _legendCard(),
           ),
 
@@ -497,17 +353,6 @@ class RiskLocation {
   });
 }
 
-Widget _circleButton(IconData icon, Color color) {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      shape: BoxShape.circle,
-      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
-    ),
-    padding: const EdgeInsets.all(12),
-    child: Icon(icon, color: color),
-  );
-}
 
 Widget _legendCard() {
   return Container(
@@ -570,11 +415,11 @@ Widget _bottomStats() {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: const [
-        _Stat(label: 'Outbreaks', value: '2', color: Colors.red),
+        _Stat(label: 'High Risk', value: '3', color: Colors.red),
         _Divider(),
-        _Stat(label: 'Moderate', value: '2', color: Colors.orange),
+        _Stat(label: 'Moderate Risk', value: '3', color: Colors.orange),
         _Divider(),
-        _Stat(label: 'Total Cases', value: '91', color: Colors.black87),
+        _Stat(label: 'Low Risk', value: '2', color: Colors.green),
       ],
     ),
   );

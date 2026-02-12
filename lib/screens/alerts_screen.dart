@@ -21,7 +21,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       risk: RiskLevel.high,
       message:
           "Increased cases reported in the area. Avoid raw or undercooked food.",
-      location: "Barangay 123, Tondo",
+      location: "Tondo",
       timeAgo: "2 hours ago",
       cases: "45 cases reported",
       distance: "0.5 km away",
@@ -31,7 +31,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       risk: RiskLevel.moderate,
       message:
           "Food contamination suspected at local market. Practice food safety.",
-      location: "Barangay 456, Binondo",
+      location: "Binondo",
       timeAgo: "5 hours ago",
       cases: "12 cases reported",
       distance: "1.2 km away",
@@ -41,7 +41,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       risk: RiskLevel.low,
       message:
           "Monitor symptoms. Ensure clean drinking water and proper food handling.",
-      location: "Barangay 789, Sampaloc",
+      location: "Sampaloc",
       timeAgo: "1 day ago",
       cases: "3 cases reported",
       distance: "2.8 km away",
@@ -50,7 +50,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       title: "Campylobacter",
       risk: RiskLevel.high,
       message: "Linked to poultry products. Cook chicken thoroughly.",
-      location: "Barangay 234, Sta. Cruz",
+      location: "Sta. Cruz",
       timeAgo: "1 day ago",
       cases: "23 cases reported",
       distance: "3.2 km away",
@@ -60,7 +60,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       risk: RiskLevel.moderate,
       message:
           "Highly contagious. Wash hands frequently and avoid sharing utensils.",
-      location: "Barangay 567, Quiapo",
+      location: "Quiapo",
       timeAgo: "2 days ago",
       cases: "8 cases reported",
       distance: "1.8 km away",
@@ -69,7 +69,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       title: "Listeria",
       risk: RiskLevel.moderate,
       message: "Linked to dairy products. Check refrigerator temperatures.",
-      location: "Barangay 890, Ermita",
+      location: "Ermita",
       timeAgo: "3 days ago",
       cases: "15 cases reported",
       distance: "2.1 km away",
@@ -176,11 +176,6 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     child: AlertCard(
                       item: item,
                       isUnread: isUnread,
-                      onDetails: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Details: ${item.title}")),
-                        );
-                      },
                     ),
                   );
                 }).toList(),

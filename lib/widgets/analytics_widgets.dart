@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../data/mock_analytics_data.dart';
 
-enum TimeRange { week, month, year }
+enum TimeRange { day, week, month }
 
 enum ViewTab { trends, districts, illnesses }
 
@@ -23,11 +23,11 @@ class TimeRangeChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        chip('Day', TimeRange.day),
+        const SizedBox(width: 8),
         chip('Week', TimeRange.week),
         const SizedBox(width: 8),
         chip('Month', TimeRange.month),
-        const SizedBox(width: 8),
-        chip('Year', TimeRange.year),
       ],
     );
   }

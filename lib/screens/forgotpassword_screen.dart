@@ -198,11 +198,21 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                                 prefixIcon: Icon(Icons.phone_outlined),
                               ),
                               validator: (v) {
-                                final value = (v ?? "").trim();
-                                if (value.isEmpty) return "Phone number is required.";
-                                if (value.length < 12) return "Enter a valid phone number.";
-                                return null;
-                              },
+                                  final value = (v ?? "").trim();
+
+                                  if (value.isEmpty) return "Phone number is required.";
+
+                                  // remove all spaces
+                                  String digitsOnly = value.replaceAll(RegExp(r'\s+'), '');
+
+                                  // must be exactly 11 digits
+                                  final phoneRegex = RegExp(r'^\d{11}$');
+
+                                  if (!phoneRegex.hasMatch(digitsOnly)) {
+                                    return "Enter a valid 11-digit phone number.";
+                                  }
+                                  return null;
+                                },
                             ),
                           ),
                           

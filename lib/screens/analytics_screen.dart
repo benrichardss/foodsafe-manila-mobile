@@ -11,7 +11,7 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  TimeRange range = TimeRange.week;
+  TimeRange range = TimeRange.day;
   ViewTab tab = ViewTab.trends;
 
   @override
@@ -69,11 +69,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 CurrentCasesCard(
                   cases: data.currentCases,
                   changePercent: data.percentChange,
-                  subtitle: range == TimeRange.week
-                      ? 'Increase from previous week'
-                      : range == TimeRange.month
-                      ? 'Increase from previous month'
-                      : 'Increase from previous year',
+                  subtitle: range == TimeRange.day
+                      ? 'Increase from previous day'
+                      : range == TimeRange.week
+                          ? 'Increase from previous week'
+                          : 'Increase from previous month',
                   onTap: () {},
                 ),
                 const SizedBox(height: 14),
@@ -101,11 +101,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   title: 'Highest Cases',
                   description: (() {
                     final highestDistrict = data.districts.reduce((a, b) => a.value > b.value ? a : b);
-                    final period = range == TimeRange.week
-                        ? 'this week'
-                        : range == TimeRange.month
-                            ? 'this month'
-                            : 'this year';
+                    final period = range == TimeRange.day
+                        ? 'this day'
+                        : range == TimeRange.week
+                            ? 'this week'
+                            : 'this month';
                     return '${highestDistrict.name} district has the highest case $period (${highestDistrict.value.toInt()})';
                   })(),
                 ),
@@ -120,11 +120,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     final mostCommonIllness = data.illnesses.reduce((a, b) => a.value > b.value ? a : b);
                     final totalCases = data.illnesses.fold<double>(0, (sum, item) => sum + item.value);
                     final percentage = ((mostCommonIllness.value / totalCases) * 100).toStringAsFixed(0);
-                    final period = range == TimeRange.week
-                        ? 'this week'
-                        : range == TimeRange.month
-                            ? 'this month'
-                            : 'this year';
+                    final period = range == TimeRange.day
+                        ? 'this day'
+                        : range == TimeRange.week
+                            ? 'this week'
+                            : 'this month';
                     return '${mostCommonIllness.name} accounts for $percentage% of all cases $period';
                   })(),
                 ),
@@ -135,11 +135,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       child: StatCard(
                         label: 'Total Cases',
                         value: data.trends.fold<double>(0, (sum, t) => sum + t.value).toInt().toString(),
-                        footnote: range == TimeRange.week
-                            ? 'This Week'
-                            : range == TimeRange.month
-                                ? 'This Month'
-                                : 'This Year',
+                        footnote: range == TimeRange.day
+                            ? 'This Day'
+                            : range == TimeRange.week
+                                ? 'This Week'
+                                : 'This Month',
                         footnoteColor: const Color(0xFF16A34A),
                       ),
                     ),

@@ -1,5 +1,3 @@
-// ignore_for_file: unused_field, unused_element
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -16,12 +14,13 @@ class _SignupScreenState extends State<SignupScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController(text: "Manila");
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
   final passwordRegex = RegExp(
     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
   );
+  String? _selectedSex;
+
   bool _showPass = false;
   bool _showConfirmPass = false;
 
@@ -49,7 +48,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _phoneCtrl.dispose();
-    _cityCtrl.dispose();
     _passCtrl.dispose();
     _confirmPassCtrl.dispose();
     super.dispose();
@@ -185,6 +183,48 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: 14),
+
+                        _LabeledField(
+                          label: "Sex *",
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _selectedSex,
+                            validator: (v) => v == null ? "Please select sex" : null,
+                            onChanged: (value) => setState(() => _selectedSex = value),
+
+                            isExpanded: true, // 🔥 makes it full width
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+
+                            decoration: InputDecoration(
+                              hintText: "Select sex",
+                              prefixIcon: const Icon(Icons.wc_outlined),
+
+                              // same rounded style as your fields
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                              ),
+                            ),
+
+                            borderRadius: BorderRadius.circular(14), // dropdown popup rounded
+                            dropdownColor: Colors.white,
+
+                            items: const [
+                              DropdownMenuItem(value: "Male", child: Text("Male")),
+                              DropdownMenuItem(value: "Female", child: Text("Female")),
+                            ],
+                          ),
+                        ),
+
                         const SizedBox(height: 14),
 
                         _LabeledField(
@@ -194,8 +234,18 @@ class _SignupScreenState extends State<SignupScreen> {
                             keyboardType: TextInputType.phone,
                             validator: (v) {
                               final value = (v ?? "").trim();
+
                               if (value.isEmpty) return "Phone number is required.";
-                              if (value.length < 12) return "Enter a valid phone number.";
+
+                              // remove all spaces
+                              String digitsOnly = value.replaceAll(RegExp(r'\s+'), '');
+
+                              // must be exactly 11 digits
+                              final phoneRegex = RegExp(r'^\d{11}$');
+
+                              if (!phoneRegex.hasMatch(digitsOnly)) {
+                                return "Enter a valid 11-digit phone number.";
+                              }
                               return null;
                             },
                             decoration: const InputDecoration(
@@ -358,50 +408,6 @@ class _SignupScreenState extends State<SignupScreen> {
     child: Divider(height: 1, color: Color(0xFFE5E7EB)),
   );
 
-  Widget _toggleTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) =>
-      Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: const Color(0xFF6B7280))),
-                ],
-              ),
-            ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              thumbColor: const WidgetStatePropertyAll<Color>(Colors.white),
-              activeTrackColor: Color(0xFF2563EB),
-              inactiveTrackColor: Color(0xFFE5E7EB),
-              trackOutlineColor: const WidgetStatePropertyAll<Color>(
-                Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
 }
 
 /// SHARED INPUT STYLE (SAME AS LOGIN)

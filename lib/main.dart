@@ -4,9 +4,11 @@ import 'screens/dashboard_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/forgotpassword_screen.dart';
+import 'services/location_service.dart';
 
-void main() {
+Future<void> main() async {
   runApp(const MainApp());
+  await LocationService.getUserAddress();
 }
 
 class MainApp extends StatelessWidget {

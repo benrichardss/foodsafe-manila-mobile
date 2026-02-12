@@ -25,13 +25,11 @@ class AlertItem {
 
 class AlertCard extends StatelessWidget {
   final AlertItem item;
-  final VoidCallback onDetails;
   final bool isUnread;
 
   const AlertCard({
     super.key,
     required this.item,
-    required this.onDetails,
     this.isUnread = true,
   });
 
@@ -155,32 +153,6 @@ class AlertCard extends StatelessWidget {
                               color: const Color(0xFF6B7280),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: onDetails,
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF2563EB),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "Details",
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          const Icon(Icons.chevron_right_rounded, size: 16),
                         ],
                       ),
                     ),

@@ -37,8 +37,6 @@ class HomeScreen extends StatelessWidget {
                       NearbyAlertsSection(),
                       SizedBox(height: 18),
                       HealthTipsSection(),
-                      SizedBox(height: 14),
-                      EmergencyHotlinesCard(),
                     ],
                   ),
                 ),

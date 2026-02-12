@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/mock_analytics_data.dart';
+import '../widgets/analytics_widgets.dart' as analytics_widgets;
 import '../widgets/predict_widgets.dart';
 
 class PredictScreen extends StatefulWidget {
@@ -56,6 +58,8 @@ class _PredictScreenState extends State<PredictScreen> {
       trend: '➡️ stable',
     ),
   ];
+
+  final data = MockAnalyticsData.getData(analytics_widgets.TimeRange.week);
 
   @override
   Widget build(BuildContext context) {
@@ -169,11 +173,6 @@ class _PredictScreenState extends State<PredictScreen> {
                       ),
                     ),
                   ),
-                  Icon(
-                    Icons.calendar_month,
-                    size: 18,
-                    color: Colors.grey.shade400,
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -181,7 +180,7 @@ class _PredictScreenState extends State<PredictScreen> {
                 height: 200,
                 width: double.infinity,
                 alignment: Alignment.center,
-                child: const ForecastChart()
+                child: Chart(showForecast: showForecast, bundle: data)
               ),
               const SizedBox(height: 10),
               Text(
@@ -233,11 +232,6 @@ class _PredictScreenState extends State<PredictScreen> {
                       ),
                     ),
                   ),
-                  Icon(
-                    Icons.history,
-                    size: 18,
-                    color: Colors.grey.shade400,
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -245,7 +239,7 @@ class _PredictScreenState extends State<PredictScreen> {
                 height: 200,
                 width: double.infinity,
                 alignment: Alignment.center,
-                child: const HistoryChart()
+                child: Chart(showForecast: showForecast, bundle: data)
               ),
               const SizedBox(height: 10),
               Row(
@@ -276,7 +270,7 @@ class _PredictScreenState extends State<PredictScreen> {
                 icon: Icons.calendar_month,
                 color: Colors.blue,
                 label: 'Avg Error',
-                value: '±8 cases',
+                value: '±2 cases',
               ),
             ),
           ],

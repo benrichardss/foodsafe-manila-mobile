@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:foodsafe_manila/screens/personal_information_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'emergency_contacts_screen.dart';
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -178,16 +176,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: "Personal Information",
                       subtitle: "Update your account details",
                       page: const PersonalInformationScreen(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildMenuTile(
-                      icon: Icons.phone,
-                      title: "Emergency Contacts",
-                      subtitle: "Important health and emergency numbers",
-                      page: const EmergencyContactsScreen(),
                     ),
                   ),
                   const SizedBox(height: 16),

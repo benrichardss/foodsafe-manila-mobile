@@ -22,6 +22,8 @@ class IllnessData {
 
 class AnalyticsBundle {
   final List<TrendPoint> trends;
+  final List<TrendPoint> forecastTrends;
+  final List<TrendPoint> predictedTrendsHistory;
   final List<DistrictData> districts;
   final List<IllnessData> illnesses;
   final int currentCases;
@@ -29,6 +31,8 @@ class AnalyticsBundle {
 
   AnalyticsBundle({
     required this.trends,
+    this.forecastTrends = const [],
+    this.predictedTrendsHistory = const [],
     required this.districts,
     required this.illnesses,
     required this.currentCases,
@@ -43,41 +47,102 @@ class AnalyticsBundle {
 class MockAnalyticsData {
   static AnalyticsBundle getData(TimeRange range) {
     switch (range) {
+      case TimeRange.day:
+        return _dayData();
       case TimeRange.week:
         return _weekData();
       case TimeRange.month:
         return _monthData();
-      case TimeRange.year:
-        return _yearData();
     }
+  }
+
+  static AnalyticsBundle _dayData() {
+    // TOTAL = 1280
+    final trends = [
+      TrendPoint('12 AM', 0),
+      TrendPoint('4 AM', 0),
+      TrendPoint('8 AM', 0),
+      TrendPoint('12 PM', 3),
+      TrendPoint('4 PM', 5),
+      TrendPoint('8 PM', 1),
+      TrendPoint('12 AM', 0),
+    ];
+
+    // TOTAL = 1280
+    final districts = [
+      DistrictData('Tondo', 4),
+      DistrictData('Sampaloc', 2),
+      DistrictData('Ermita', 0),
+      DistrictData('Malate', 3),
+      DistrictData('Paco', 0),
+    ];
+
+    // TOTAL = 1280
+    final illnesses = [
+      IllnessData('Food Poisoning', 220, const Color(0xFF3B82F6)),
+      IllnessData('E. Coli', 120, const Color(0xFFEC4899)),
+      IllnessData('Norovirus', 80, const Color(0xFFF59E0B)),
+      IllnessData('Salmonella', 180, const Color(0xFF8B5CF6)),
+      IllnessData('Others', 55, const Color(0xFF10B981)),
+    ];
+    
+    int total = trends.fold(0, (sum, e) => sum + e.value.toInt());
+    
+    return AnalyticsBundle(
+      currentCases: total,
+      percentChange: 6.2,
+      trends: trends,
+      districts: districts,
+      illnesses: illnesses,
+    );
   }
 
   // ---------- WEEK ----------
   static AnalyticsBundle _weekData() {
     final trends = [
-      TrendPoint('Mon', 20),
-      TrendPoint('Tue', 25),
-      TrendPoint('Wed', 18),
-      TrendPoint('Thu', 30),
-      TrendPoint('Fri', 22),
+      TrendPoint('Mon', 11),
+      TrendPoint('Tue', 7),
+      TrendPoint('Wed', 8),
+      TrendPoint('Thu', 9),
+      TrendPoint('Fri', 18),
       TrendPoint('Sat', 15),
-      TrendPoint('Sun', 20),
+      TrendPoint('Sun', 12),
+    ];
+
+    final forecastTrends = [
+      TrendPoint('Mon', 13),
+      TrendPoint('Tue', 5),
+      TrendPoint('Wed', 10),
+      TrendPoint('Thu', 7),
+      TrendPoint('Fri', 20),
+      TrendPoint('Sat', 13),
+      TrendPoint('Sun', 14),
+    ];
+  
+    final predictedTrendsHistory = [
+      TrendPoint('Mon', 9),
+      TrendPoint('Tue', 9),
+      TrendPoint('Wed', 6),
+      TrendPoint('Thu', 11),
+      TrendPoint('Fri', 16),
+      TrendPoint('Sat', 17),
+      TrendPoint('Sun', 10),
     ];
 
     final districts = [
-      DistrictData('Tondo', 40),
-      DistrictData('Sampaloc', 30),
-      DistrictData('Ermita', 25),
+      DistrictData('Tondo', 38),
+      DistrictData('Sampaloc', 12),
+      DistrictData('Ermita', 8),
       DistrictData('Malate', 20),
-      DistrictData('Paco', 35),
+      DistrictData('Paco', 2),
     ];
 
     final illnesses = [
-      IllnessData('Food Poisoning', 45, const Color(0xFF3B82F6)),
-      IllnessData('E. Coli', 30, const Color(0xFFEC4899)),
-      IllnessData('Norovirus', 25, const Color(0xFFF59E0B)),
-      IllnessData('Salmonella', 35, const Color(0xFF8B5CF6)),
-      IllnessData('Others', 15, const Color(0xFF10B981)),
+      IllnessData('Food Poisoning', 34, const Color(0xFF3B82F6)),
+      IllnessData('E. Coli', 6, const Color(0xFFEC4899)),
+      IllnessData('Norovirus', 5, const Color(0xFFF59E0B)),
+      IllnessData('Salmonella', 26, const Color(0xFF8B5CF6)),
+      IllnessData('Others', 9, const Color(0xFF10B981)),
     ];
 
     // 🔥 AUTO TOTAL (from trends)
@@ -87,6 +152,8 @@ class MockAnalyticsData {
       currentCases: total, // <-- USE TOTAL HERE
       percentChange: 34.1,
       trends: trends,
+      forecastTrends: forecastTrends,
+      predictedTrendsHistory: predictedTrendsHistory,
       districts: districts,
       illnesses: illnesses,
     );
@@ -133,53 +200,6 @@ class MockAnalyticsData {
     return AnalyticsBundle(
       currentCases: total,
       percentChange: 12.5,
-      trends: trends,
-      districts: districts,
-      illnesses: illnesses,
-    );
-  }
-
-  // ---------- YEAR ----------
-  static AnalyticsBundle _yearData() {
-    // TOTAL = 1280
-    final trends = [
-      TrendPoint('2015', 80),
-      TrendPoint('2016', 90),
-      TrendPoint('2017', 95),
-      TrendPoint('2018', 100),
-      TrendPoint('2019', 110),
-      TrendPoint('2020', 85),
-      TrendPoint('2021', 95),
-      TrendPoint('2022', 110),
-      TrendPoint('2023', 120),
-      TrendPoint('2024', 140),
-      TrendPoint('2025', 170),
-      TrendPoint('2026', 185),
-    ];
-
-    // TOTAL = 1280
-    final districts = [
-      DistrictData('Tondo', 350),
-      DistrictData('Sampaloc', 250),
-      DistrictData('Ermita', 200),
-      DistrictData('Malate', 180),
-      DistrictData('Paco', 300),
-    ];
-
-    // TOTAL = 1280
-    final illnesses = [
-      IllnessData('Food Poisoning', 420, const Color(0xFF3B82F6)),
-      IllnessData('E. Coli', 250, const Color(0xFFEC4899)),
-      IllnessData('Norovirus', 180, const Color(0xFFF59E0B)),
-      IllnessData('Salmonella', 290, const Color(0xFF8B5CF6)),
-      IllnessData('Others', 140, const Color(0xFF10B981)),
-    ];
-    
-    int total = trends.fold(0, (sum, e) => sum + e.value.toInt());
-    
-    return AnalyticsBundle(
-      currentCases: total,
-      percentChange: 6.2,
       trends: trends,
       districts: districts,
       illnesses: illnesses,

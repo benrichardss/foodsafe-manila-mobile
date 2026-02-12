@@ -1,6 +1,10 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../data/mock_analytics_data.dart';
 
 class SegmentedToggle extends StatelessWidget {
   final String leftLabel;
@@ -170,333 +174,170 @@ class ChartCard extends StatelessWidget {
   }
 }
 
-class ForecastChart extends StatelessWidget {
-  const ForecastChart({super.key});
+class Chart extends StatelessWidget {
+  final bool showForecast;
+  final AnalyticsBundle bundle;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: 9,
-          minY: 0,
-          maxY: 120,
+const Chart({super.key, required this.showForecast, required this.bundle});
 
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withValues(alpha: 0.15),
-              strokeWidth: 1,
-            ),
-            getDrawingVerticalLine: (value) => FlLine(
-              color: Colors.grey.withValues(alpha: 0.15),
-              strokeWidth: 1,
-            ),
-          ),
-
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              left: BorderSide(color: Colors.grey.shade400),
-              bottom: BorderSide(color: Colors.grey.shade400),
-              right: BorderSide.none,
-              top: BorderSide.none,
-            ),
-          ),
-
-          titlesData: FlTitlesData(
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  if (value % 2 != 0) return const SizedBox.shrink();
-                  const years = [
-                    '2015',
-                    '2016',
-                    '2017',
-                    '2018',
-                    '2019',
-                    '2020',
-                    '2021',
-                    '2022',
-                    '2023',
-                    '2024',
-                  ];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      years[value.toInt()],
-                      style: GoogleFonts.inter(fontSize: 11),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 30,
-                getTitlesWidget: (value, meta) {
-                  return Padding(
-                    padding: const EdgeInsetsGeometry.only(right: 8),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: GoogleFonts.inter(fontSize: 11),
-                      textAlign: TextAlign.right,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Line data
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: true,
-              barWidth: 1.2,
-              color: Colors.blue.withValues(alpha: 0.35),
-              dashArray: [4, 4],
-              dotData: FlDotData(show: false),
-              spots: const [
-                FlSpot(0, 115),
-                FlSpot(1, 95),
-                FlSpot(2, 70),
-                FlSpot(3, 90),
-                FlSpot(4, 110),
-                FlSpot(5, 118),
-                FlSpot(6, 120),
-                FlSpot(7, 108),
-                FlSpot(8, 88),
-                FlSpot(9, 78),
-              ],
-            ),
-
-            LineChartBarData(
-              isCurved: true,
-              barWidth: 1.2,
-              color: Colors.blue.withValues(alpha: 0.35),
-              dashArray: [4, 4],
-              dotData: FlDotData(show: false),
-              spots: const [
-                FlSpot(0, 60),
-                FlSpot(1, 55),
-                FlSpot(2, 40),
-                FlSpot(3, 45),
-                FlSpot(4, 65),
-                FlSpot(5, 75),
-                FlSpot(6, 82),
-                FlSpot(7, 72),
-                FlSpot(8, 55),
-                FlSpot(9, 50),
-              ],
-            ),
-
-            LineChartBarData(
-              isCurved: true,
-              curveSmoothness: 0.3,
-              color: const Color(0xFF3B6DFF),
-              barWidth: 2.5,
-
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, percent, barData, index) {
-                  return FlDotCirclePainter(
-                    radius: 4,
-                    color: const Color(0xFF3B6DFF),
-                    strokeWidth: 0,
-                  );
-                },
-              ),
-
-              belowBarData: BarAreaData(show: false),
-
-              spots: const [
-                FlSpot(0, 90),
-                FlSpot(1, 72),
-                FlSpot(2, 50),
-                FlSpot(3, 65),
-                FlSpot(4, 85),
-                FlSpot(5, 92),
-                FlSpot(6, 98),
-                FlSpot(7, 88),
-                FlSpot(8, 70),
-                FlSpot(9, 60),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+@override
+Widget build(BuildContext context) {
+  switch (showForecast) {
+    case true:
+      return lineChart(bundle.trends, bundle.forecastTrends);
+    case false:
+      return lineChart(bundle.trends, bundle.predictedTrendsHistory);
+    }
   }
 }
 
-class HistoryChart extends StatelessWidget {
-  const HistoryChart({super.key});
+double getInterval(double maxValue, int steps) {
+  final rawInterval = maxValue / steps;
+  return (rawInterval / steps).ceil() * 5;
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: 9,
-          minY: 0,
-          maxY: 120,
+double getMaxY(double maxValue, int steps) {
+  final interval = getInterval(maxValue, steps);
+  return interval * steps;
+}
 
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withValues(alpha: 0.15),
-              strokeWidth: 1,
-            ),
-            getDrawingVerticalLine: (value) => FlLine(
-              color: Colors.grey.withValues(alpha: 0.15),
-              strokeWidth: 1,
-            ),
+Widget lineChart(List<TrendPoint> data1, List<TrendPoint> data2) {
+    final allValues = [
+    ...data1.map((e) => e.value),
+    ...data2.map((e) => e.value),
+  ];
+  final maxValue = allValues.reduce(max);
+  final interval = getInterval(maxValue, 5);
+  final maxY = getMaxY(maxValue, 5);
+
+  return Container(
+    padding: EdgeInsets.all(10),
+    child: LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: (data1.length - 1).toDouble(),
+        minY: 0,
+        maxY: maxY,
+
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.15),
+            strokeWidth: 1,
           ),
-
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              left: BorderSide(color: Colors.grey.shade400),
-              bottom: BorderSide(color: Colors.grey.shade400),
-              right: BorderSide.none,
-              top: BorderSide.none,
-            ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.15),
+            strokeWidth: 1,
           ),
-
-          titlesData: FlTitlesData(
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  if (value % 2 != 0) return const SizedBox.shrink();
-                  const years = [
-                    '2015',
-                    '2016',
-                    '2017',
-                    '2018',
-                    '2019',
-                    '2020',
-                    '2021',
-                    '2022',
-                    '2023',
-                    '2024',
-                  ];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      years[value.toInt()],
-                      style: GoogleFonts.inter(fontSize: 11),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 30,
-                getTitlesWidget: (value, meta) {
-                  return Padding(
-                    padding: const EdgeInsetsGeometry.only(right: 8),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: GoogleFonts.inter(fontSize: 11),
-                      textAlign: TextAlign.right,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Line data
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: true,
-              barWidth: 1.2,
-              color: Colors.blue,
-              dashArray: [4, 4],
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, percent, barData, index) {
-                  return FlDotCirclePainter(
-                    radius: 4,
-                    color: Colors.blue,
-                    strokeWidth: 0,
-                  );
-                },
-              ),
-              spots: const [
-                FlSpot(0, 115),
-                FlSpot(1, 95),
-                FlSpot(2, 70),
-                FlSpot(3, 90),
-                FlSpot(4, 110),
-                FlSpot(5, 118),
-                FlSpot(6, 120),
-                FlSpot(7, 108),
-                FlSpot(8, 88),
-                FlSpot(9, 78),
-              ],
-            ),
-
-            LineChartBarData(
-              isCurved: true,
-              curveSmoothness: 0.3,
-              color: Colors.green,
-              barWidth: 2.5,
-
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, percent, barData, index) {
-                  return FlDotCirclePainter(
-                    radius: 4,
-                    color: Colors.green,
-                    strokeWidth: 0,
-                  );
-                },
-              ),
-
-              belowBarData: BarAreaData(show: false),
-
-              spots: const [
-                FlSpot(0, 90),
-                FlSpot(1, 72),
-                FlSpot(2, 50),
-                FlSpot(3, 65),
-                FlSpot(4, 85),
-                FlSpot(5, 92),
-                FlSpot(6, 98),
-                FlSpot(7, 88),
-                FlSpot(8, 70),
-                FlSpot(9, 60),
-              ],
-            ),
-          ],
         ),
+
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            left: BorderSide(color: Colors.grey.shade400),
+            bottom: BorderSide(color: Colors.grey.shade400),
+            right: BorderSide.none,
+            top: BorderSide.none,
+          ),
+        ),
+
+        titlesData: FlTitlesData(
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() >= data1.length) return const SizedBox();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    data1[value.toInt()].label,
+                    style: GoogleFonts.inter(fontSize: 11),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                return Padding(
+                  padding: const EdgeInsetsGeometry.only(right: 8),
+                  child: Text(
+                    value.toInt().toString(),
+                    style: GoogleFonts.inter(fontSize: 11),
+                    textAlign: TextAlign.right,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+
+        // Line data
+        lineBarsData: [
+          LineChartBarData(
+            isCurved: true,
+            curveSmoothness: 0.3,
+            color: Colors.green,
+            barWidth: 2.5,
+
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: Colors.green,
+                  strokeWidth: 0,
+                );
+              },
+            ),
+
+            belowBarData: BarAreaData(show: false),
+
+            spots: List.generate(
+              data1.length,
+              (i) => FlSpot(i.toDouble(), data1[i].value),
+            ),
+          ),
+
+          LineChartBarData(
+            isCurved: true,
+            curveSmoothness: 0.3,
+            color: const Color(0xFF3B6DFF),
+            barWidth: 2.5,
+            dashArray: [4, 4],
+
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: const Color(0xFF3B6DFF),
+                  strokeWidth: 0,
+                );
+              },
+            ),
+
+            belowBarData: BarAreaData(show: false),
+
+            spots: List.generate(
+              data2.length,
+              (i) => FlSpot(i.toDouble(), data2[i].value),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class DistrictRiskCard extends StatelessWidget {

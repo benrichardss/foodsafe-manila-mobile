@@ -1,132 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:foodsafe_manila/screens/alerts_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
-class Header extends StatelessWidget {
+import '../services/location_service.dart';
+
+class Header extends StatefulWidget {
   final VoidCallback onBellTap;
   const Header({super.key, required this.onBellTap});
+
+  @override
+  State<Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends State<Header> {
+  late String locationText;
+  String dateText = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHeader();
+    locationText = LocationService.cachedAddress ?? "Fetching...";
+
+    // Optionally, refresh in background
+    LocationService.getUserAddress(forceRefresh: true).then((updated) {
+      if (mounted) {
+        setState(() {
+          locationText = updated;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadHeader() async {
+    _updateDate();
+
+    LocationService.getUserAddress().then((address) {
+      setState(() {
+        locationText = address;
+      });
+    });
+  }
+
+  void _updateDate() {
+    final now = DateTime.now();
+    dateText = DateFormat('EEEE, MMM dd, hh:mm a').format(now);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 30, 16, 36),
-      decoration: BoxDecoration(
-        color:  Color(0xFF2563EB),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
+          /// TOP BAR
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "FoodSafe",
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      "Stay informed about health risks in your area!",
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text("FoodSafe",
+                        style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white)),
+                    Text("Stay informed about health risks in your area!",
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: Colors.white)),
                   ],
                 ),
               ),
+
               InkWell(
-                onTap: () => Navigator.push(
-                  context, 
-                  MaterialPageRoute(
-                    builder: (context) => const AlertsScreen(),
-                  ),
-                ),
+                onTap: widget.onBellTap,
                 borderRadius: BorderRadius.circular(999),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6).withValues(alpha: .15),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Positioned(
-                      top: 7,
-                      right: 7,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
-                          shape: BoxShape.circle,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .15),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6).withValues(alpha: .15),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Colors.white,
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        top: 7,
+                        right: 7,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
 
+          const SizedBox(height: 16),
+
+          /// LOCATION CARD
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB).withValues(alpha: .15),
+              color: Colors.white.withValues(alpha: .15),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E7EB).withValues(alpha: .15)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
                 Row(
                   children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 6),
+                    const Icon(Icons.location_on_outlined,
+                        size: 16, color: Colors.white),
+                    const SizedBox(width: 6),
                     Text(
-                      "Your Location",
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
+                      locationText,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
+
+                const SizedBox(height: 4),
+
                 Text(
-                  "Tondo, Manila",
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Thursday, Jan 22, 06:16 PM",
-                  style: GoogleFonts.inter(fontSize: 11, color: Colors.white),
+                  dateText,
+                  style:
+                      GoogleFonts.inter(fontSize: 11, color: Colors.white),
                 ),
               ],
             ),
@@ -137,152 +173,115 @@ class Header extends StatelessWidget {
   }
 }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.location_on_outlined, size: 16, color: Colors.white),
-              SizedBox(width: 6),
-              Text(
-                "Your Location",
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(
-            "Tondo, Manila",
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "Thursday, Jan 22, 06:16 PM",
-            style: GoogleFonts.inter(fontSize: 11, color: Color(0xFFDBEAFE)),
-          ),
-        ],
-      ),
-    );
-  }
-
 class DashboardSummaryCard extends StatelessWidget {
   const DashboardSummaryCard({super.key});
 
+  String _getCurrentYear() {
+    return DateTime.now().year.toString();
+  }
+
+  String _getDateRange() {
+    final now = DateTime.now();
+    final startOfYear = DateTime(now.year, 1, 1);
+    final formatter = DateFormat('MMM d');
+    return "${formatter.format(startOfYear)}–${formatter.format(now)}, ${now.year}";
+  }
+
   @override
   Widget build(BuildContext context) {
+    final currentYear = _getCurrentYear();
+    final dateRange = _getDateRange();
+
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          /// HEADER ROW
           Row(
             children: [
               Expanded(
                 child: Text(
                   "Dashboard Summary",
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDBEAFE),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  "2026",
+                  currentYear,
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E40AF),
+                    color: const Color(0xFF1E40AF),
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+          /// STAT TILES ROW 1
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: _StatTile(
-                    bg: Color(0xFFFFF1F2),
-                    border: Color(0xFFFECACA),
+                    bg: const Color(0xFFFFF1F2),
+                    border: const Color(0xFFFECACA),
                     icon: Icons.monitor_heart_outlined,
-                    iconColor: Color(0xFFDC2626),
+                    iconColor: const Color(0xFFDC2626),
                     label: "Total Cases",
                     value: "889",
-                    sub: "Jan 1–19, 2026",
-                    valueColor: Color(0xFFB91C1C),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: _StatTile(
-                    bg: Color(0xFFFFF7ED),
-                    border: Color(0xFFFED7AA),
-                    icon: Icons.warning_amber_rounded,
-                    iconColor: Color(0xFFD97706),
-                    label: "High Risk",
-                    value: "2",
-                    sub: "Districts",
-                    valueColor: Color(0xFFB45309),
+                    sub: dateRange, // dynamic range here
+                    valueColor: const Color(0xFFB91C1C),
                   ),
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 10),
+
+          /// STAT TILES ROW 2
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: _StatTile(
-                    bg: Color(0xFFFAF5FF),
-                    border: Color(0xFFE9D5FF),
+                    bg: const Color(0xFFFAF5FF),
+                    border: const Color(0xFFE9D5FF),
                     icon: Icons.groups_2_outlined,
-                    iconColor: Color(0xFF7C3AED),
+                    iconColor: const Color(0xFF7C3AED),
                     label: "Most Common",
                     value: "Food Poisoning",
                     sub: "Illness Type",
-                    valueColor: Color(0xFF6D28D9),
+                    valueColor: const Color(0xFF6D28D9),
                     isSmallValue: true,
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _StatTile(
-                    bg: Color(0xFFEFF6FF),
-                    border: Color(0xFFBFDBFE),
-                    icon: Icons.map_outlined,
-                    iconColor: Color(0xFF2563EB),
-                    label: "Active Areas",
-                    value: "23",
-                    sub: "Barangays",
-                    valueColor: Color(0xFF1D4ED8),
+                    bg: const Color(0xFFFFF7ED),
+                    border: const Color(0xFFFED7AA),
+                    icon: Icons.warning_amber_rounded,
+                    iconColor: const Color(0xFFD97706),
+                    label: "High Risk",
+                    value: "2",
+                    sub: "Districts", // keep static if it's categorical
+                    valueColor: const Color(0xFFB45309),
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -884,120 +883,6 @@ class _TipCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/* ---------------- Emergency Hotlines ---------------- */
-
-class EmergencyHotlinesCard extends StatelessWidget {
-  const EmergencyHotlinesCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      radius: 14,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Emergency Hotlines",
-            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 10),
-          _HotlineRow(
-            title: "DOH Hotline",
-            subtitle: "24/7 Available",
-            number: "1555",
-            bg: const Color(0xFFFFF1F2),
-            numberColor: const Color(0xFFDC2626),
-            onTap: () => _showDialSnack(context, "1555"),
-          ),
-          const SizedBox(height: 10),
-          _HotlineRow(
-            title: "Emergency",
-            subtitle: "Police, Fire, Medical",
-            number: "911",
-            bg: const Color(0xFFEFF6FF),
-            numberColor: const Color(0xFF2563EB),
-            onTap: () => _showDialSnack(context, "911"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static void _showDialSnack(BuildContext context, String num) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text("Dial $num")));
-  }
-}
-
-class _HotlineRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String number;
-  final Color bg;
-  final Color numberColor;
-  final VoidCallback onTap;
-
-  const _HotlineRow({
-    required this.title,
-    required this.subtitle,
-    required this.number,
-    required this.bg,
-    required this.numberColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              number,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: numberColor,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
