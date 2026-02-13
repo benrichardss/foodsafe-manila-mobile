@@ -312,19 +312,12 @@ Widget lineChart(List<TrendPoint> data1, List<TrendPoint> data2) {
           LineChartBarData(
             isCurved: true,
             curveSmoothness: 0.3,
-            color: const Color(0xFF3B6DFF),
+            color: Colors.blue,
             barWidth: 2.5,
             dashArray: [4, 4],
 
             dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 4,
-                  color: const Color(0xFF3B6DFF),
-                  strokeWidth: 0,
-                );
-              },
+              show: false,
             ),
 
             belowBarData: BarAreaData(show: false),
@@ -430,13 +423,6 @@ class DistrictRiskCard extends StatelessWidget {
                       ),
                       Text(
                         'Est. ${district.estCases} cases',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      Text(
-                        district.trend,
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -714,13 +700,11 @@ class DistrictRisk {
   final RiskLevel level;
   final int score;
   final int estCases;
-  final String trend;
 
   const DistrictRisk({
     required this.name,
     required this.level,
     required this.score,
     required this.estCases,
-    required this.trend,
   });
 }

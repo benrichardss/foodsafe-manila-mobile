@@ -20,42 +20,36 @@ class _PredictScreenState extends State<PredictScreen> {
       level: RiskLevel.high,
       score: 82,
       estCases: 67,
-      trend: '📈 increasing',
     ),
     DistrictRisk(
       name: 'Binondo',
       level: RiskLevel.moderate,
       score: 58,
       estCases: 42,
-      trend: '➡️ stable',
     ),
     DistrictRisk(
       name: 'Sta. Cruz',
       level: RiskLevel.high,
       score: 75,
       estCases: 54,
-      trend: '📈 increasing',
     ),
     DistrictRisk(
       name: 'Sampaloc',
       level: RiskLevel.moderate,
       score: 45,
       estCases: 34,
-      trend: '📉 decreasing',
     ),
     DistrictRisk(
       name: 'San Miguel',
       level: RiskLevel.low,
       score: 28,
       estCases: 18,
-      trend: '📉 decreasing',
     ),
     DistrictRisk(
       name: 'Malate',
       level: RiskLevel.low,
       score: 22,
-      estCases: 12,
-      trend: '➡️ stable',
+      estCases: 1
     ),
   ];
 
@@ -183,13 +177,13 @@ class _PredictScreenState extends State<PredictScreen> {
                 child: Chart(showForecast: showForecast, bundle: data)
               ),
               const SizedBox(height: 10),
-              Text(
-                'Predicted cases with confidence intervals',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: Colors.grey.shade600,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LegendDot(color: Colors.green, label: 'Actual Cases'),
+                  const SizedBox(width: 16),
+                  LegendDot(color: Colors.blue, label: 'Forecasted Cases'),
+                ],
               ),
             ],
           ),
@@ -243,13 +237,13 @@ class _PredictScreenState extends State<PredictScreen> {
               ),
               const SizedBox(height: 10),
               Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                LegendDot(color: Colors.green, label: 'Actual Cases'),
-                const SizedBox(width: 16),
-                LegendDot(color: Colors.blue, label: 'Predicted Cases'),
-              ],
-            ),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LegendDot(color: Colors.green, label: 'Actual Cases'),
+                  const SizedBox(width: 16),
+                  LegendDot(color: Colors.blue, label: 'Predicted Cases'),
+                ],
+              ),
             ],
           ),
         ),

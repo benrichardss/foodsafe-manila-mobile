@@ -218,9 +218,9 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderRadius: BorderRadius.circular(14), // dropdown popup rounded
                             dropdownColor: Colors.white,
 
-                            items: const [
-                              DropdownMenuItem(value: "Male", child: Text("Male")),
-                              DropdownMenuItem(value: "Female", child: Text("Female")),
+                            items: [
+                              DropdownMenuItem(value: "Male", child: Text("Male", style: GoogleFonts.inter())),
+                              DropdownMenuItem(value: "Female", child: Text("Female", style: GoogleFonts.inter())),
                             ],
                           ),
                         ),
@@ -452,7 +452,7 @@ class _LabeledField extends StatelessWidget {
                     color: Color(0xFF3B82F6), width: 2),
               ),
               errorMaxLines: 2,
-              errorStyle: TextStyle(
+              errorStyle: GoogleFonts.inter(
                 fontSize: 11,
                 color: const Color(0xFFDC2626),
               ),

@@ -407,7 +407,7 @@ class _LabeledField extends StatelessWidget {
                 borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
               ),
               errorMaxLines: 2,
-              errorStyle: TextStyle(
+              errorStyle: GoogleFonts.inter(
                 fontSize: 11,
                 color: const Color(0xFFDC2626),
               ),
