@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:foodsafe_manila/screens/personal_information_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/session.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key,});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final user = Session.currentUser;
   bool pushNotifications = true;
   bool smsAlerts = true;
   bool highRiskAlerts = false;
@@ -80,8 +82,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             children: [
                               Container(
-                                width: 80,
-                                height: 80,
+                                width: 64,
+                                height: 64,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
@@ -93,10 +95,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    'J',
+                                    user?['first_name'] != null ? user!['first_name'][0] : '',
                                     style: GoogleFonts.inter(
                                       color: Colors.white,
-                                      fontSize: 28,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -108,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Juan Dela Cruz',
+                                      '${user?['first_name']} ${user?['last_name']}',
                                       style: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -116,15 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     SizedBox(height: 4),
                                     Text(
-                                      'juan.delacruz@email.com',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      '+63 912 345 6789',
+                                      formatPhone(user?['phone_number']),
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: Colors.grey,
@@ -135,6 +129,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 12),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const PersonalInformationScreen(),
+                                  ),
+                                );
+                              },
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStatePropertyAll(
+                                  Color(0xFFEFF6FF),
+                                ),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                padding: WidgetStatePropertyAll(
+                                  EdgeInsets.all(10),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit,
+                                    color: Color(0xFF1555F3),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Edit Profile',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Color(0xFF1555F3),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -142,21 +184,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildMenuTile(
-                      icon: Icons.person,
-                      title: "Personal Information",
-                      subtitle: "Update your account details",
-                      page: const PersonalInformationScreen(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(16), // rounded-2xl
                         border: Border.all(color: Colors.grey.shade200),
                         boxShadow: [
                           BoxShadow(
@@ -170,43 +202,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Quick Settings',
+                            "Activity",
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          _activityRow("Reports Submitted", "4"),
                           const SizedBox(height: 12),
-                          _buildToggle(
-                            icon: Icons.notifications,
-                            label: 'Push Notifications',
-                            value: pushNotifications,
-                            onChanged: (val) {
-                              setState(() {
-                                pushNotifications = val;
-                              });
-                            },
-                          ),
-                          _buildToggle(
-                            icon: Icons.phone,
-                            label: 'SMS Alerts',
-                            value: smsAlerts,
-                            onChanged: (val) {
-                              setState(() {
-                                smsAlerts = val;
-                              });
-                            },
-                          ),
-                          _buildToggle(
-                            icon: Icons.shield,
-                            label: 'High Risk Alerts Only',
-                            value: highRiskAlerts,
-                            onChanged: (val) {
-                              setState(() {
-                                highRiskAlerts = val;
-                              });
-                            },
-                          ),
+
+                          _activityRow("Districts Reported", "2"),
+                          const SizedBox(height: 12),
+
+                          _activityRow("Last Report", "Feb 28"),
                         ],
                       ),
                     ),
@@ -214,17 +225,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildMenuTile(
+                      icon: Icons.person,
+                      gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                      title: "Personal Information",
+                      subtitle: "Update your account details",
+                      page: const PersonalInformationScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildMenuTile(
+                      icon: Icons.lock,
+                      gradientColors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                      title: "Change Password",
+                      subtitle: "Secure your account with a new password",
+                      page: const PersonalInformationScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildMenuTile(
+                      icon: Icons.article,
+                      gradientColors: [Color(0xFF10B981), Color(0xFF059669)],
+                      title: "My Reports",
+                      subtitle: "View and manage your submitted reports",
+                      page: const PersonalInformationScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TextButton(
                       onPressed: () {
+                        Session.currentUser = null;
                         Navigator.pushReplacementNamed(context, '/login');
                       },
                       style: ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(
-                          Color(0xFFFEF2F2),
+                          Colors.white,
+                        ),
+                        overlayColor: WidgetStatePropertyAll(
+                          Color(0xFFFFF1F2),
                         ),
                         shape: WidgetStatePropertyAll(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Color(0xFFFECACA)),
                           ),
                         ),
                       ),
@@ -254,8 +303,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String formatPhone(String phone) {
+    if (phone.length != 11) return phone;
+
+    return '${phone.substring(0, 4)} '
+          '${phone.substring(4, 7)} '
+          '${phone.substring(7)}';
+  }
+
+  Widget _activityRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.black45,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMenuTile({
     required IconData icon,
+    required List<Color> gradientColors,
     required String title,
     required String subtitle,
     required Widget page,
@@ -297,9 +376,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     width: 48,
                     height: 48,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                        colors: gradientColors,
                       ),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
@@ -337,39 +416,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildToggle({
-    required IconData icon,
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF2563EB)),
-              const SizedBox(width: 8),
-              Text(label, style: GoogleFonts.inter(fontSize: 14)),
-            ],
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            thumbColor: const WidgetStatePropertyAll<Color>(Colors.white),
-            activeTrackColor: Color(0xFF2563EB),
-            inactiveTrackColor: Color(0xFFE5E7EB),
-            trackOutlineColor: const WidgetStatePropertyAll<Color>(
-              Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }

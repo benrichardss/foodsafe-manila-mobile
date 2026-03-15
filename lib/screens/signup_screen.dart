@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../database/db.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -17,31 +18,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
   final passwordRegex = RegExp(
-    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])[^\s]{8,}$',
   );
   String? _selectedSex;
 
   bool _showPass = false;
   bool _showConfirmPass = false;
+  bool _loading = false;
 
-  final barangays = [
-    "Barangay 1 - Tondo",
-    "Barangay 123 - Tondo",
-    "Barangay 234 - Binondo",
-    "Barangay 456 - Sampaloc",
-    "Barangay 567 - Sta. Cruz",
-    "Barangay 789 - Quiapo",
-    "Barangay 890 - Ermita",
-  ];
-
-  final districts = [
-    "District 1",
-    "District 2",
-    "District 3",
-    "District 4",
-    "District 5",
-    "District 6",
-  ];
+  final _passFocus = FocusNode();
+  final _confirmPassFocus = FocusNode();
 
   @override
   void dispose() {
@@ -50,16 +36,44 @@ class _SignupScreenState extends State<SignupScreen> {
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     _confirmPassCtrl.dispose();
+    _passFocus.dispose();
+    _confirmPassFocus.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Sign up successful!")),
-    );
-    Navigator.pop(context);
+    setState(() => _loading = true);
+
+    try {
+      String phone = _phoneCtrl.text.replaceAll(" ", "");
+
+      bool success = await Database.registerUser(
+        firstName: _firstNameCtrl.text.trim(),
+        lastName: _lastNameCtrl.text.trim(),
+        sex: _selectedSex!,
+        phone: phone,
+        password: _passCtrl.text,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Account created successfully")),
+        );
+
+        Navigator.pop(context); // return to login
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Phone number already registered")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -88,8 +102,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.white70),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white70,
+                          ),
                           label: Text(
                             "Back",
                             style: GoogleFonts.inter(color: Colors.white70),
@@ -146,8 +162,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   padding: const EdgeInsets.all(24),
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
                   child: Form(
                     key: _formKey,
@@ -163,6 +180,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "First Name *",
                           child: TextFormField(
                             controller: _firstNameCtrl,
+                            textInputAction: TextInputAction.next,
                             validator: _required,
                             decoration: const InputDecoration(
                               hintText: "Juan",
@@ -176,6 +194,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "Last Name *",
                           child: TextFormField(
                             controller: _lastNameCtrl,
+                            textInputAction: TextInputAction.next,
                             validator: _required,
                             decoration: const InputDecoration(
                               hintText: "Dela Cruz",
@@ -190,9 +209,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "Sex *",
                           child: DropdownButtonFormField<String>(
                             initialValue: _selectedSex,
-                            validator: (v) => v == null ? "Please select sex" : null,
-                            onChanged: (value) => setState(() => _selectedSex = value),
-
+                            validator: (v) =>
+                                v == null ? "Please select sex" : null,
+                            onChanged: (value) {
+                              setState(() => _selectedSex = value);
+                              FocusScope.of(context).nextFocus();
+                            },
                             isExpanded: true, // 🔥 makes it full width
                             icon: const Icon(Icons.keyboard_arrow_down_rounded),
 
@@ -203,24 +225,42 @@ class _SignupScreenState extends State<SignupScreen> {
                               // same rounded style as your fields
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFD1D5DB),
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFD1D5DB),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF3B82F6),
+                                  width: 2,
+                                ),
                               ),
                             ),
 
-                            borderRadius: BorderRadius.circular(14), // dropdown popup rounded
+                            borderRadius: BorderRadius.circular(
+                              14,
+                            ), // dropdown popup rounded
                             dropdownColor: Colors.white,
 
                             items: [
-                              DropdownMenuItem(value: "Male", child: Text("Male", style: GoogleFonts.inter())),
-                              DropdownMenuItem(value: "Female", child: Text("Female", style: GoogleFonts.inter())),
+                              DropdownMenuItem(
+                                value: "Male",
+                                child: Text("Male", style: GoogleFonts.inter()),
+                              ),
+                              DropdownMenuItem(
+                                value: "Female",
+                                child: Text(
+                                  "Female",
+                                  style: GoogleFonts.inter(),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -232,13 +272,19 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextFormField(
                             controller: _phoneCtrl,
                             keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
                             validator: (v) {
                               final value = (v ?? "").trim();
 
-                              if (value.isEmpty) return "Phone number is required.";
+                              if (value.isEmpty) {
+                                return "Phone number is required.";
+                              }
 
                               // remove all spaces
-                              String digitsOnly = value.replaceAll(RegExp(r'\s+'), '');
+                              String digitsOnly = value.replaceAll(
+                                RegExp(r'\s+'),
+                                '',
+                              );
 
                               // must be exactly 11 digits
                               final phoneRegex = RegExp(r'^\d{11}$');
@@ -268,6 +314,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "Password *",
                           child: TextFormField(
                             controller: _passCtrl,
+                            focusNode: _passFocus,
+                            textInputAction: TextInputAction.next,
+                            onEditingComplete: () => FocusScope.of(
+                              context,
+                            ).requestFocus(_confirmPassFocus),
                             obscureText: !_showPass,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
@@ -280,20 +331,23 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                             decoration: InputDecoration(
                               hintText: "••••••••",
-                              prefixIcon:
-                                  const Icon(Icons.lock_outline),
+                              prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 onPressed: () =>
                                     setState(() => _showPass = !_showPass),
-                                icon: Icon(_showPass
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
+                                icon: Icon(
+                                  _showPass
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
                               ),
                             ),
                           ),
                         ),
 
-                        _helper('Must be at least 8 characters with uppercase, lowercase, numbers, and symbols'),
+                        _helper(
+                          'Must be at least 8 characters with uppercase, lowercase, numbers, and symbols',
+                        ),
 
                         const SizedBox(height: 14),
 
@@ -301,6 +355,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "Confirm Password *",
                           child: TextFormField(
                             controller: _confirmPassCtrl,
+                            focusNode: _confirmPassFocus,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _submit(),
                             obscureText: !_showConfirmPass,
                             validator: (v) {
                               if (v != _passCtrl.text) {
@@ -310,15 +367,16 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                             decoration: InputDecoration(
                               hintText: "••••••••",
-                              prefixIcon:
-                                  const Icon(Icons.lock_outline),
+                              prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 onPressed: () => setState(
-                                    () => _showConfirmPass =
-                                        !_showConfirmPass),
-                                icon: Icon(_showConfirmPass
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
+                                  () => _showConfirmPass = !_showConfirmPass,
+                                ),
+                                icon: Icon(
+                                  _showConfirmPass
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
                               ),
                             ),
                           ),
@@ -343,23 +401,31 @@ class _SignupScreenState extends State<SignupScreen> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: _submit,
+                            onPressed: _loading ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(14),
                               ),
                               elevation: 0,
                             ),
-                            child: Text(
-                              "Create Account",
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    "Create Account",
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -370,7 +436,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
         ),
-      )
+      ),
     );
   }
 
@@ -378,28 +444,31 @@ class _SignupScreenState extends State<SignupScreen> {
       (v == null || v.isEmpty) ? "Required field" : null;
 
   Widget _sectionTitle(String title, String subtitle) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: GoogleFonts.inter(
-                    fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(subtitle,
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: const Color(0xFF4B5563))),
-          ],
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800),
         ),
-      );
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: const Color(0xFF4B5563),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _helper(String text) => Padding(
     padding: const EdgeInsets.only(top: 4),
     child: Text(
       text,
-      style: GoogleFonts.inter(
-          fontSize: 11, color: const Color(0xFF6B7280)),
+      style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280)),
     ),
   );
 
@@ -407,7 +476,6 @@ class _SignupScreenState extends State<SignupScreen> {
     padding: EdgeInsets.symmetric(vertical: 24),
     child: Divider(height: 1, color: Color(0xFFE5E7EB)),
   );
-
 }
 
 /// SHARED INPUT STYLE (SAME AS LOGIN)
@@ -434,22 +502,24 @@ class _LabeledField extends StatelessWidget {
         Theme(
           data: Theme.of(context).copyWith(
             inputDecorationTheme: InputDecorationTheme(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide:
-                    const BorderSide(color: Color(0xFFD1D5DB)),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide:
-                    const BorderSide(color: Color(0xFFD1D5DB)),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(
-                    color: Color(0xFF3B82F6), width: 2),
+                  color: Color(0xFF3B82F6),
+                  width: 2,
+                ),
               ),
               errorMaxLines: 2,
               errorStyle: GoogleFonts.inter(

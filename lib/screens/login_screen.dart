@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../database/db.dart';
+import '../services/session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,15 +31,27 @@ class _LogInScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
+
     try {
-      // TODO: replace with auth call
-      await Future.delayed(const Duration(milliseconds: 500));
+      String phone = _phoneCtrl.text.replaceAll(" ", "");
+      String password = _passCtrl.text;
+
+      var user = await Database.login(phone, password);
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signed in")),
-      );
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      if (user != null) {
+        Session.currentUser = user;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Login successful")),
+        );
+
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid phone or password")),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -179,7 +193,6 @@ class _LogInScreenState extends State<LoginScreen> {
                                 validator: (v) {
                                   final value = (v ?? "");
                                   if (value.isEmpty) return "Password is required.";
-                                  if (value.length < 4) return "Password looks too short.";
                                   return null;
                                 },
                               ),

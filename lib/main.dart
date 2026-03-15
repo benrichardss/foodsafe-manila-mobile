@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:foodsafe_manila/database/db.dart';
 import 'screens/dashboard_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
@@ -7,6 +8,8 @@ import '../screens/forgotpassword_screen.dart';
 import 'services/location_service.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Database.connect();
   runApp(const MainApp());
   await LocationService.getUserAddress();
 }
