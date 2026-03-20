@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:foodsafe_manila/widgets/snackbar_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../database/db.dart';
 import '../services/session.dart';
@@ -42,15 +43,11 @@ class _LogInScreenState extends State<LoginScreen> {
 
       if (user != null) {
         Session.currentUser = user;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login successful")),
-        );
+        SnackbarWidgets.success(context, "Login successful");
 
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid phone or password")),
-        );
+        SnackbarWidgets.error(context, "Invalid phone number or password");
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -93,7 +90,8 @@ class _LogInScreenState extends State<LoginScreen> {
                             ],
                           ),
                           child: const Icon(
-                            Icons.monitor_heart_outlined, // lucide-activity vibe
+                            Icons
+                                .monitor_heart_outlined, // lucide-activity vibe
                             size: 56,
                             color: Color(0xFF2563EB),
                           ),
@@ -106,17 +104,23 @@ class _LogInScreenState extends State<LoginScreen> {
                       Text(
                         "FoodSafe",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white),
+                        style: GoogleFonts.inter(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         "Stay informed about health risks in your area!",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 13, color: Color(0xFFBFDBFE)),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Color(0xFFBFDBFE),
+                        ),
                       ),
 
                       const SizedBox(height: 22),
-
                     ],
                   ),
                 ),
@@ -125,19 +129,28 @@ class _LogInScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Welcome Back",
-                        style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         "Sign in to continue",
-                        style: GoogleFonts.inter(fontSize: 13, color: Color(0xFF4B5563)),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Color(0xFF4B5563),
+                        ),
                       ),
                       const SizedBox(height: 14),
 
@@ -158,10 +171,15 @@ class _LogInScreenState extends State<LoginScreen> {
                                 validator: (v) {
                                   final value = (v ?? "").trim();
 
-                                  if (value.isEmpty) return "Phone number is required.";
+                                  if (value.isEmpty) {
+                                    return "Phone number is required.";
+                                  }
 
                                   // remove all spaces
-                                  String digitsOnly = value.replaceAll(RegExp(r'\s+'), '');
+                                  String digitsOnly = value.replaceAll(
+                                    RegExp(r'\s+'),
+                                    '',
+                                  );
 
                                   // must be exactly 11 digits
                                   final phoneRegex = RegExp(r'^\d{11}$');
@@ -186,13 +204,20 @@ class _LogInScreenState extends State<LoginScreen> {
                                   hintText: "••••••••",
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: IconButton(
-                                    onPressed: () => setState(() => _showPass = !_showPass),
-                                    icon: Icon(_showPass ? Icons.visibility : Icons.visibility_off),
+                                    onPressed: () =>
+                                        setState(() => _showPass = !_showPass),
+                                    icon: Icon(
+                                      _showPass
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                    ),
                                   ),
                                 ),
                                 validator: (v) {
                                   final value = (v ?? "");
-                                  if (value.isEmpty) return "Password is required.";
+                                  if (value.isEmpty) {
+                                    return "Password is required.";
+                                  }
                                   return null;
                                 },
                               ),
@@ -203,22 +228,32 @@ class _LogInScreenState extends State<LoginScreen> {
                               children: [
                                 Checkbox(
                                   value: _remember,
-                                  onChanged: (v) => setState(() => _remember = v ?? false),
+                                  onChanged: (v) =>
+                                      setState(() => _remember = v ?? false),
                                   activeColor: const Color(0xFF2563EB),
                                 ),
                                 Expanded(
                                   child: Text(
                                     "Remember me",
-                                    style: GoogleFonts.inter(fontSize: 13, color: Color(0xFF4B5563)),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: Color(0xFF4B5563),
+                                    ),
                                   ),
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pushNamed(context, '/forgot_password');
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/forgot_password',
+                                    );
                                   },
                                   child: Text(
                                     "Forgot Password?",
-                                    style: GoogleFonts.inter(color: Color(0xFF2563EB), fontWeight: FontWeight.w700),
+                                    style: GoogleFonts.inter(
+                                      color: Color(0xFF2563EB),
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -234,18 +269,26 @@ class _LogInScreenState extends State<LoginScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2563EB),
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                   elevation: 0,
                                 ),
                                 child: _loading
                                     ? const SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
                                       )
                                     : Text(
                                         "Sign In",
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                               ),
                             ),
@@ -261,7 +304,10 @@ class _LogInScreenState extends State<LoginScreen> {
                       Text(
                         "Don't have an account?",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 13, color: Color(0xFF4B5563)),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Color(0xFF4B5563),
+                        ),
                       ),
                       const SizedBox(height: 10),
 
@@ -273,12 +319,20 @@ class _LogInScreenState extends State<LoginScreen> {
                             Navigator.pushNamed(context, '/signup');
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF2563EB), width: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            side: const BorderSide(
+                              color: Color(0xFF2563EB),
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: Text(
                             "Create Account",
-                            style: GoogleFonts.inter(color: Color(0xFF2563EB), fontWeight: FontWeight.w800),
+                            style: GoogleFonts.inter(
+                              color: Color(0xFF2563EB),
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
@@ -289,16 +343,20 @@ class _LogInScreenState extends State<LoginScreen> {
                         "By signing in, you agree to our Terms of Service and Privacy Policy. "
                         "Your data is protected under the Data Privacy Act of 2012.",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 11, color: Color(0xFF4B5563), height: 1.35),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: Color(0xFF4B5563),
+                          height: 1.35,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ),
-      )
+      ),
     );
   }
 }
@@ -314,12 +372,22 @@ class _LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
         const SizedBox(height: 8),
         Theme(
           data: Theme.of(context).copyWith(
             inputDecorationTheme: InputDecorationTheme(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
@@ -330,7 +398,10 @@ class _LabeledField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                borderSide: const BorderSide(
+                  color: Color(0xFF3B82F6),
+                  width: 2,
+                ),
               ),
               errorMaxLines: 2,
               errorStyle: GoogleFonts.inter(

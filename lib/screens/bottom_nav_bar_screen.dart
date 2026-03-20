@@ -1,0 +1,386 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:foodsafe_manila/screens/alerts_screen.dart';
+import 'package:foodsafe_manila/screens/analytics_screen.dart';
+import 'package:foodsafe_manila/screens/predict_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../screens/home_screen.dart';
+import '../screens/map_screen.dart';
+import '../services/session.dart';
+import 'personal_info_screen.dart';
+
+class BottomNavBarScreen extends StatefulWidget {
+  const BottomNavBarScreen({super.key});
+
+  @override
+  State<BottomNavBarScreen> createState() => _BottomNavBarScreenState();
+}
+
+class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final user = Session.currentUser;
+  int _selectedIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Colors.white,
+      endDrawer: Drawer(
+        backgroundColor: const Color(0xFFF9FAFB),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(
+            left: Radius.circular(20), // for right drawer
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  ),
+                ),
+                child: Container(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white
+                        ),
+                        child: Center(
+                          child: Text(
+                            user?['username'] != null ? user!['username'][0].toUpperCase() : '',
+                            style: GoogleFonts.inter(
+                              color: Color(0xFF3B82F6),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?['username'] ?? 'Juan Dela Cruz',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white
+                              ),
+                            ),
+                            Text(
+                              formatPhone(user?['phone_number']),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ),
+              _buildMenuTile(
+                  icon: Icons.person,
+                  gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  title: "Personal Information",
+                  subtitle: "Update your account details",
+                  page: const PersonalInfoScreen(),
+                ),
+              _buildMenuTile(
+                icon: Icons.article,
+                gradientColors: [Color(0xFF10B981), Color(0xFF059669)],
+                title: "My Reports",
+                subtitle: "View and manage your submitted reports",
+                page: const PersonalInfoScreen(),
+              ),
+              Spacer(),
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: TextButton(
+                  onPressed: () async {
+                    final confirm = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Text(
+                          "Sign out",
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        ),
+                        content: Text(
+                          "Are you sure you want to sign out?",
+                          style: GoogleFonts.inter(),
+                        ),
+                        actions: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, false);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Text(
+                                    "Cancel",
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, true);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2563EB),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Text(
+                                    "Sign out",
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          
+                        ],
+                      ),
+                    );
+
+                    if (!context.mounted) return;
+
+                    if (confirm == true) {
+                      Session.currentUser = null;
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStatePropertyAll(
+                      Color(0xFFFFF1F2)
+                    ),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout, color: Colors.red),
+                      SizedBox(width: 5),
+                      Text(
+                        'Sign out',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: PageView(
+        controller: _pageController,
+        children: <Widget>[
+          HomeScreen(
+            onProfileTap: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
+          ),
+          const MapScreen(),
+          const AnalyticsScreen(),
+          const PredictScreen(),
+          const AlertsScreen(),
+        ],
+        onPageChanged: (page) {
+          setState(() {
+            _selectedIndex = page;
+          });
+        },
+      ),
+      bottomNavigationBar: Container(
+        height: 64.sp,
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.grey.shade300, width: 1),
+          ),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          iconSize: 24,
+          selectedLabelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 10,
+          ),
+          unselectedLabelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 10,
+          ),
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          onTap: _onTappedBar,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin),
+              label: 'Map',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Analytics',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.trending_up),
+              label: 'Predict',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications),
+              label: 'Alerts',
+            ),
+          ],
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.black45,
+          currentIndex: _selectedIndex,
+        ),
+      ),
+    );
+  }
+
+  void _onTappedBar(int value) {
+    setState(() {
+      _selectedIndex = value;
+    });
+    _pageController.jumpToPage(value);
+  }
+
+  String formatPhone(String phone) {
+    if (phone.length != 11) return phone;
+
+    return '${phone.substring(0, 4)} '
+        '${phone.substring(4, 7)} '
+        '${phone.substring(7)}';
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required List<Color> gradientColors,
+    required String title,
+    required String subtitle,
+    required Widget page,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade300, 
+            width: 1
+          )
+        )
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          splashColor: const Color(0xFF2563EB).withValues(alpha: 0.15),
+          highlightColor: Colors.black.withValues(alpha: 0.04),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => page),
+            );
+          },
+          child: Ink(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // icon box
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: gradientColors,
+                      ),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    child: Icon(icon, color: Colors.white),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

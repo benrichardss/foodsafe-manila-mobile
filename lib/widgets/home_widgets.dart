@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import '../services/location_service.dart';
 
 class Header extends StatefulWidget {
-  final VoidCallback onBellTap;
-  const Header({super.key, required this.onBellTap});
+  final VoidCallback onTap;
+  const Header({super.key, required this.onTap});
 
   @override
   State<Header> createState() => _HeaderState();
@@ -84,7 +84,7 @@ class _HeaderState extends State<Header> {
               ),
 
               InkWell(
-                onTap: widget.onBellTap,
+                onTap: widget.onTap,
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
                   width: 40,
@@ -104,7 +104,7 @@ class _HeaderState extends State<Header> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: const Icon(
-                          Icons.notifications_none_rounded,
+                          Icons.person,
                           color: Colors.white,
                         ),
                       ),

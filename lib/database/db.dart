@@ -41,9 +41,7 @@ class Database {
   }
 
   static Future<bool> registerUser({
-    required String firstName,
-    required String lastName,
-    required String sex,
+    required String username,
     required String phone,
     required String password,
   }) async {
@@ -60,9 +58,7 @@ class Database {
       }
 
       await userCollection!.insertOne({
-        'first_name': firstName,
-        'last_name': lastName,
-        'sex': sex,
+        'username': username,
         'phone_number': phone,
         'password': password,
         'created_at': DateTime.now(),
@@ -71,6 +67,47 @@ class Database {
       return true;
     } catch (e) {
       log("Register error: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> updateUser({
+    required ObjectId id,
+    required String username,
+    required String phone,
+  }) async {
+    try {
+      phone = phone.replaceAll(" ", "");
+
+      var result = await userCollection!.updateOne(
+        where.id(id),
+        modify
+            .set('username', username)
+            .set('phone_number', phone),
+      );
+
+      return result.isSuccess;
+    } catch (e) {
+      log("Update error: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> updatePassword({
+    required String phone,
+    required String newPassword,
+  }) async {
+    try {
+      phone = phone.replaceAll(" ", "");
+
+      var result = await userCollection!.updateOne(
+        where.eq('phone_number', phone),
+        modify.set('password', newPassword),
+      );
+
+      return result.isSuccess;
+    } catch (e) {
+      log("Update password error: $e");
       return false;
     }
   }

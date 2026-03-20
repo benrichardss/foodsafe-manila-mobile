@@ -1,4 +1,7 @@
+import '../services/otp_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:foodsafe_manila/widgets/snackbar_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../database/db.dart';
 
@@ -12,15 +15,17 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _firstNameCtrl = TextEditingController();
-  final _lastNameCtrl = TextEditingController();
+  final _usernameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
+  late List<TextEditingController> otpControllers;
+  late List<FocusNode> otpFocusNodes;
+
   final passwordRegex = RegExp(
     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])[^\s]{8,}$',
   );
-  String? _selectedSex;
 
   bool _showPass = false;
   bool _showConfirmPass = false;
@@ -29,21 +34,91 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passFocus = FocusNode();
   final _confirmPassFocus = FocusNode();
 
+  int _currentStep = 0;
+  int _resendSeconds = 0;
+  bool _otpSnackbarShown = false;
+  bool _otpTimerStarted = false;
+
+  late OTPService _otpService;
+
+  @override
+  void initState() {
+    super.initState();
+
+    otpControllers = List.generate(4, (_) => TextEditingController());
+    otpFocusNodes = List.generate(4, (_) => FocusNode());
+
+    _otpService = OTPService();
+  }
+
   @override
   void dispose() {
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
+    _usernameCtrl.dispose();
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     _confirmPassCtrl.dispose();
     _passFocus.dispose();
     _confirmPassFocus.dispose();
+    _otpCtrl.dispose();
+
+    for (var c in otpControllers) {
+      c.dispose();
+    }
+    for (var f in otpFocusNodes) {
+      f.dispose();
+    }
+
+    _otpService.stopResendTimer();
+
     super.dispose();
+  }
+
+  // Mock OTP generation
+  void _sendOTP({bool forceNew = false}) {
+    final wasExpired = _otpService.isExpired;
+    final otp = _otpService.generateOTP(forceNew: forceNew);
+
+    // Show OTP in snackbar once per generated OTP (or on explicit forced resend)
+    if (forceNew || !_otpSnackbarShown || wasExpired) {
+      _otpSnackbarShown = true;
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
+        SnackbarWidgets.showTopNotification(context, otp);
+      });
+    }
+
+    // Start timer only on first OTP send or explicit resend button click
+    if (forceNew || !_otpTimerStarted) {
+      _otpTimerStarted = true;
+      _otpService.startResendTimer(
+        onTick: (remaining) {
+          if (!mounted) return;
+          setState(() {
+            _resendSeconds = remaining;
+          });
+        },
+        onCompleted: () {
+          if (!mounted) return;
+          setState(() {
+            _resendSeconds = 0;
+          });
+        },
+      );
+    }
   }
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate()) return;
+
+    if (_otpService.isExpired) {
+      SnackbarWidgets.error(context, "OTP expired. Please resend.");
+      return;
+    }
+
+    if (!_otpService.validateOTP(_otpCtrl.text)) {
+      SnackbarWidgets.error(context, "Invalid OTP");
+      return;
+    }
 
     setState(() => _loading = true);
 
@@ -51,9 +126,7 @@ class _SignupScreenState extends State<SignupScreen> {
       String phone = _phoneCtrl.text.replaceAll(" ", "");
 
       bool success = await Database.registerUser(
-        firstName: _firstNameCtrl.text.trim(),
-        lastName: _lastNameCtrl.text.trim(),
-        sex: _selectedSex!,
+        username: _usernameCtrl.text.trim(),
         phone: phone,
         password: _passCtrl.text,
       );
@@ -61,18 +134,50 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully")),
-        );
+        SnackbarWidgets.success(context, "Account created successfully");
 
         Navigator.pop(context); // return to login
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Phone number already registered")),
-        );
+        SnackbarWidgets.error(context, "Phone number already registered");
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _nextStep() async {
+    if (_currentStep == 0) {
+      // Validate personal info
+      if (!_formKey.currentState!.validate()) return;
+
+      String phone = _phoneCtrl.text.replaceAll(" ", "");
+      var existingUser = await Database.userCollection!.findOne({
+        'phone_number': phone,
+      });
+
+      if (!mounted) return;
+
+      if (existingUser != null) {
+        SnackbarWidgets.error(context, "Phone number already registered");
+        return;
+      }
+
+      setState(() => _currentStep = 1);
+      return;
+    }
+    if (_currentStep == 1) {
+      if (!_formKey.currentState!.validate()) return;
+
+      setState(() => _currentStep = 2);
+
+      _sendOTP();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        FocusScope.of(context).requestFocus(otpFocusNodes[0]);
+      });
+
+      return;
     }
   }
 
@@ -171,219 +276,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _sectionTitle(
-                          "Personal Information",
-                          "Tell us a bit about yourself",
-                        ),
-
-                        _LabeledField(
-                          label: "First Name *",
-                          child: TextFormField(
-                            controller: _firstNameCtrl,
-                            textInputAction: TextInputAction.next,
-                            validator: _required,
-                            decoration: const InputDecoration(
-                              hintText: "Juan",
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "Last Name *",
-                          child: TextFormField(
-                            controller: _lastNameCtrl,
-                            textInputAction: TextInputAction.next,
-                            validator: _required,
-                            decoration: const InputDecoration(
-                              hintText: "Dela Cruz",
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "Sex *",
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _selectedSex,
-                            validator: (v) =>
-                                v == null ? "Please select sex" : null,
-                            onChanged: (value) {
-                              setState(() => _selectedSex = value);
-                              FocusScope.of(context).nextFocus();
-                            },
-                            isExpanded: true, // 🔥 makes it full width
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded),
-
-                            decoration: InputDecoration(
-                              hintText: "Select sex",
-                              prefixIcon: const Icon(Icons.wc_outlined),
-
-                              // same rounded style as your fields
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFD1D5DB),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFD1D5DB),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF3B82F6),
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-
-                            borderRadius: BorderRadius.circular(
-                              14,
-                            ), // dropdown popup rounded
-                            dropdownColor: Colors.white,
-
-                            items: [
-                              DropdownMenuItem(
-                                value: "Male",
-                                child: Text("Male", style: GoogleFonts.inter()),
-                              ),
-                              DropdownMenuItem(
-                                value: "Female",
-                                child: Text(
-                                  "Female",
-                                  style: GoogleFonts.inter(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "Phone Number *",
-                          child: TextFormField(
-                            controller: _phoneCtrl,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            validator: (v) {
-                              final value = (v ?? "").trim();
-
-                              if (value.isEmpty) {
-                                return "Phone number is required.";
-                              }
-
-                              // remove all spaces
-                              String digitsOnly = value.replaceAll(
-                                RegExp(r'\s+'),
-                                '',
-                              );
-
-                              // must be exactly 11 digits
-                              final phoneRegex = RegExp(r'^\d{11}$');
-
-                              if (!phoneRegex.hasMatch(digitsOnly)) {
-                                return "Enter a valid 11-digit phone number.";
-                              }
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              hintText: "0912 345 6789",
-                              prefixIcon: Icon(Icons.phone_outlined),
-                            ),
-                          ),
-                        ),
-
-                        _helper("We'll send SMS alerts to this number"),
-
-                        _divider(),
-
-                        _sectionTitle(
-                          "Account Security",
-                          "Set a password for your account",
-                        ),
-
-                        _LabeledField(
-                          label: "Password *",
-                          child: TextFormField(
-                            controller: _passCtrl,
-                            focusNode: _passFocus,
-                            textInputAction: TextInputAction.next,
-                            onEditingComplete: () => FocusScope.of(
-                              context,
-                            ).requestFocus(_confirmPassFocus),
-                            obscureText: !_showPass,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return "Password is required";
-                              }
-                              if (!passwordRegex.hasMatch(v)) {
-                                return "Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols";
-                              }
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              hintText: "••••••••",
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                onPressed: () =>
-                                    setState(() => _showPass = !_showPass),
-                                icon: Icon(
-                                  _showPass
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        _helper(
-                          'Must be at least 8 characters with uppercase, lowercase, numbers, and symbols',
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _LabeledField(
-                          label: "Confirm Password *",
-                          child: TextFormField(
-                            controller: _confirmPassCtrl,
-                            focusNode: _confirmPassFocus,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _submit(),
-                            obscureText: !_showConfirmPass,
-                            validator: (v) {
-                              if (v != _passCtrl.text) {
-                                return "Passwords do not match";
-                              }
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              hintText: "••••••••",
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(
-                                  () => _showConfirmPass = !_showConfirmPass,
-                                ),
-                                icon: Icon(
-                                  _showConfirmPass
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
+                        const SizedBox(height: 20),
+                        _stepProgressBar(),
+                        const SizedBox(height: 20),
+                        _buildStepContent(),
+                        const SizedBox(height: 20),
                         Text(
                           "By creating an account, you agree to our Terms of Service and Privacy Policy. "
                           "Your data is protected under the Data Privacy Act of 2012.",
@@ -392,40 +289,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             fontSize: 11,
                             color: const Color(0xFF4B5563),
                             height: 1.35,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(
-                                    "Create Account",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
                           ),
                         ),
                       ],
@@ -437,6 +300,27 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _stepProgressBar() {
+    int totalSteps = 3;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(totalSteps, (index) {
+        bool isActive = index <= _currentStep;
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            height: 6,
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFF2563EB) : Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -472,10 +356,379 @@ class _SignupScreenState extends State<SignupScreen> {
     ),
   );
 
-  Widget _divider() => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 24),
-    child: Divider(height: 1, color: Color(0xFFE5E7EB)),
-  );
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return _personalInfoStep();
+      case 1:
+        return _accountSecurityStep();
+      case 2:
+        return _otpStep();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _personalInfoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle("Personal Information", "Tell us a bit about yourself"),
+        _LabeledField(
+          label: "Name *",
+          child: TextFormField(
+            controller: _usernameCtrl,
+            textInputAction: TextInputAction.next,
+            validator: _required,
+            decoration: const InputDecoration(
+              hintText: "Juan Dela Cruz",
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        _LabeledField(
+          label: "Phone Number *",
+          child: TextFormField(
+            controller: _phoneCtrl,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.done,
+            validator: (v) {
+              final value = (v ?? "").trim();
+
+              if (value.isEmpty) {
+                return "Phone number is required.";
+              }
+
+              // remove all spaces
+              String digitsOnly = value.replaceAll(RegExp(r'\s+'), '');
+
+              // must be exactly 11 digits
+              final phoneRegex = RegExp(r'^\d{11}$');
+
+              if (!phoneRegex.hasMatch(digitsOnly)) {
+                return "Enter a valid 11-digit phone number.";
+              }
+              return null;
+            },
+            decoration: const InputDecoration(
+              hintText: "0912 345 6789",
+              prefixIcon: Icon(Icons.phone_outlined),
+            ),
+          ),
+        ),
+
+        _helper("We'll send SMS alerts to this number"),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _nextStep,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            child: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    "Next",
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w800),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _accountSecurityStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle("Account Security", "Set a password for your account"),
+        _LabeledField(
+          label: "Password *",
+          child: TextFormField(
+            controller: _passCtrl,
+            focusNode: _passFocus,
+            textInputAction: TextInputAction.next,
+            onEditingComplete: () =>
+                FocusScope.of(context).requestFocus(_confirmPassFocus),
+            obscureText: !_showPass,
+            validator: (v) {
+              if (v == null || v.isEmpty) {
+                return "Password is required";
+              }
+              if (!passwordRegex.hasMatch(v)) {
+                return "Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols";
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              hintText: "••••••••",
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => _showPass = !_showPass),
+                icon: Icon(_showPass ? Icons.visibility : Icons.visibility_off),
+              ),
+            ),
+          ),
+        ),
+
+        _helper(
+          'Must be at least 8 characters with uppercase, lowercase, numbers, and symbols',
+        ),
+
+        const SizedBox(height: 14),
+
+        _LabeledField(
+          label: "Confirm Password *",
+          child: TextFormField(
+            controller: _confirmPassCtrl,
+            focusNode: _confirmPassFocus,
+            textInputAction: TextInputAction.done,
+            obscureText: !_showConfirmPass,
+            validator: (v) {
+              if (v != _passCtrl.text) {
+                return "Passwords do not match";
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              hintText: "••••••••",
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                onPressed: () =>
+                    setState(() => _showConfirmPass = !_showConfirmPass),
+                icon: Icon(
+                  _showConfirmPass ? Icons.visibility : Icons.visibility_off,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _currentStep--),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                child: Text(
+                  "Back",
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _nextStep,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        "Next",
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w800),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _otpStep() {
+    // Autofill _otpCtrl when all 4 digits entered
+    void updateOtp() {
+      _otpCtrl.text = otpControllers.map((c) => c.text).join();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "OTP Verification",
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 10),
+        Text("Enter the 4-digit OTP sent to your phone."),
+        const SizedBox(height: 30),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(4, (index) {
+            return SizedBox(
+              height: 64,
+              width: 64,
+              child: TextFormField(
+                onChanged: (value) {
+                  if (value.length == 1 && index < 3) {
+                    // Move to next field
+                    FocusScope.of(
+                      context,
+                    ).requestFocus(otpFocusNodes[index + 1]);
+                  } else if (value.isEmpty && index > 0) {
+                    // Move back if deleted
+                    FocusScope.of(
+                      context,
+                    ).requestFocus(otpFocusNodes[index - 1]);
+                  }
+                  updateOtp();
+                },
+                style: GoogleFonts.inter(fontWeight: FontWeight.w800),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF3B82F6),
+                      width: 2,
+                    ),
+                  ),
+                  errorMaxLines: 2,
+                  errorStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: const Color(0xFFDC2626),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                controller: otpControllers[index],
+                focusNode: otpFocusNodes[index],
+                textAlign: TextAlign.center,
+                textAlignVertical: TextAlignVertical.center,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(1),
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+              ),
+            );
+          }),
+        ),
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Did not receive code?', style: GoogleFonts.inter()),
+            TextButton(
+              onPressed: _resendSeconds > 0
+                  ? null
+                  : () {
+                      _sendOTP(forceNew: true);
+                    },
+              style: ButtonStyle(
+                visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+              ),
+              child: Text(
+                _resendSeconds > 0
+                    ? "Resend in $_resendSeconds s"
+                    : "Resend Code",
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  color: _resendSeconds > 0
+                      ? Colors.grey
+                      : const Color(0xFF2563EB),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _currentStep--),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                child: Text(
+                  "Back",
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        "Submit",
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w800),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 /// SHARED INPUT STYLE (SAME AS LOGIN)

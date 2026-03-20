@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:foodsafe_manila/screens/alerts_screen.dart';
-
+import '../services/session.dart';
 import '../widgets/home_widgets.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final VoidCallback onProfileTap;
+  const HomeScreen({super.key, required this.onProfileTap});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final user = Session.currentUser;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
+      
       body: SafeArea(
         top: true,
         child: SingleChildScrollView(
@@ -17,12 +25,7 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             children: [
               Header(
-                onBellTap: () => Navigator.push(
-                  context, 
-                  MaterialPageRoute(
-                    builder: (context) => const AlertsScreen(),
-                  ),
-                ),
+                onTap: widget.onProfileTap,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -33,10 +36,6 @@ class HomeScreen extends StatelessWidget {
                       DashboardSummaryCard(),
                       SizedBox(height: 14),
                       CurrentRiskCard(),
-                      SizedBox(height: 18),
-                      NearbyAlertsSection(),
-                      SizedBox(height: 18),
-                      HealthTipsSection(),
                     ],
                   ),
                 ),

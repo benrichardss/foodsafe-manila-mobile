@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
 class PersonalInformationScreen extends StatelessWidget {
   const PersonalInformationScreen({super.key});
 
@@ -82,25 +83,11 @@ class PersonalInformationScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _InputField(
-                            label: "Full Name *",
+                            label: "Name *",
                             child: TextField(
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.person_outlined, color: Theme.of(context).colorScheme.outline),
                                 hintText: 'Juan Dela Cruz',
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _InputField(
-                            label: "Email Address *",
-                            child: TextField(
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.mail_outlined, color: Theme.of(context).colorScheme.outline),
-                                hintText: 'juandelacruz@email.com',
                                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),

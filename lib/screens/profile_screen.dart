@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:foodsafe_manila/screens/personal_information_screen.dart';
+import 'package:foodsafe_manila/screens/personal_info_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/session.dart';
 
@@ -41,6 +41,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                        SizedBox(width: 6),
+                        Text(
+                          "Back",
+                          style: GoogleFonts.inter(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     'Profile',
                     style: GoogleFonts.inter(
@@ -48,10 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  Text(
-                    'Manage your account and preferences',
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),
@@ -95,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    user?['first_name'] != null ? user!['first_name'][0] : '',
+                                    user?['username'] != null ? user!['username'][0] : '',
                                     style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontSize: 24,
@@ -110,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${user?['first_name']} ${user?['last_name']}',
+                                      user?['username'] ?? 'Juan Dela Cruz',
                                       style: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -139,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        const PersonalInformationScreen(),
+                                        const PersonalInfoScreen(),
                                   ),
                                 );
                               },
@@ -230,7 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                       title: "Personal Information",
                       subtitle: "Update your account details",
-                      page: const PersonalInformationScreen(),
+                      page: const PersonalInfoScreen(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -241,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       gradientColors: [Color(0xFFEF4444), Color(0xFFDC2626)],
                       title: "Change Password",
                       subtitle: "Secure your account with a new password",
-                      page: const PersonalInformationScreen(),
+                      page: const PersonalInfoScreen(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -252,16 +265,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       gradientColors: [Color(0xFF10B981), Color(0xFF059669)],
                       title: "My Reports",
                       subtitle: "View and manage your submitted reports",
-                      page: const PersonalInformationScreen(),
+                      page: const PersonalInfoScreen(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TextButton(
-                      onPressed: () {
-                        Session.currentUser = null;
-                        Navigator.pushReplacementNamed(context, '/login');
+                      onPressed: () async {
+                        final confirm = await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: Text(
+                              "Sign out",
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                            ),
+                            content: Text(
+                              "Are you sure you want to sign out?",
+                              style: GoogleFonts.inter(),
+                            ),
+                            actions: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, false);
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        side: const BorderSide(color: Color(0xFFD1D5DB)),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text(
+                                        "Cancel",
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, true);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2563EB),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text(
+                                        "Sign out",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              
+                              
+                            ],
+                          ),
+                        );
+
+                        if (!context.mounted) return;
+
+                        if (confirm == true) {
+                          Session.currentUser = null;
+                          Navigator.pushReplacementNamed(context, '/login');
+                        }
                       },
                       style: ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(
@@ -280,10 +366,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.exit_to_app, color: Colors.red),
+                          Icon(Icons.logout, color: Colors.red),
                           SizedBox(width: 5),
                           Text(
-                            'Log Out',
+                            'Sign out',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
