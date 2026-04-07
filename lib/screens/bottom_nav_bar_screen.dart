@@ -270,10 +270,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     label: 'Map',
                     index: 1,
                   ),
-                  _buildBottomNavItem(
-                    label: 'Report', 
-                    index: 2
-                  ),
+                  _buildBottomNavItem(icon: null, label: 'Report', index: 2),
                   _buildBottomNavItem(
                     icon: Icons.bar_chart,
                     label: 'Analytics',
@@ -337,38 +334,42 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }) {
     final isSelected = _selectedIndex == index;
 
-    return Expanded(
-      child: InkWell(
-        onTap: () => _onTappedBar(index),
-        borderRadius: BorderRadius.all(Radius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null)
-                Icon(
-                  icon,
-                  size: 24,
-                  color: isSelected ? Colors.blue : Colors.black45,
-                )
-              else
-                const SizedBox(height: 24),
+    final navItem = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null)
+            Icon(
+              icon,
+              size: 24,
+              color: isSelected ? Colors.blue : Colors.black45,
+            )
+          else
+            const SizedBox(height: 24),
 
-              const SizedBox(height: 2),
+          const SizedBox(height: 2),
 
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.blue : Colors.black45,
-                ),
-              ),
-            ],
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.blue : Colors.black45,
+            ),
           ),
-        ),
+        ],
       ),
+    );
+
+    return Expanded(
+      child: icon != null
+          ? InkWell(
+              onTap: () => _onTappedBar(index),
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+              child: navItem,
+            )
+          : navItem,
     );
   }
 
