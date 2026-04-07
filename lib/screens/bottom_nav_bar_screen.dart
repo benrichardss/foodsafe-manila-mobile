@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:foodsafe_manila/screens/alerts_screen.dart';
 import 'package:foodsafe_manila/screens/analytics_screen.dart';
-import 'package:foodsafe_manila/screens/predict_screen.dart';
+import 'package:foodsafe_manila/screens/report_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
@@ -53,11 +53,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                         height: 64,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white
+                          color: Colors.white,
                         ),
                         child: Center(
                           child: Text(
-                            user?['username'] != null ? user!['username'][0].toUpperCase() : '',
+                            user?['username'] != null
+                                ? user!['username'][0].toUpperCase()
+                                : '',
                             style: GoogleFonts.inter(
                               color: Color(0xFF3B82F6),
                               fontSize: 24,
@@ -76,7 +78,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white
+                                color: Colors.white,
                               ),
                             ),
                             Text(
@@ -91,15 +93,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                       ),
                     ],
                   ),
-                )
+                ),
               ),
               _buildMenuTile(
-                  icon: Icons.person,
-                  gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                  title: "Personal Information",
-                  subtitle: "Update your account details",
-                  page: const PersonalInfoScreen(),
-                ),
+                icon: Icons.person,
+                gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                title: "Personal Information",
+                subtitle: "Update your account details",
+                page: const PersonalInfoScreen(),
+              ),
               _buildMenuTile(
                 icon: Icons.article,
                 gradientColors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -110,7 +112,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               Spacer(),
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: TextButton(
                   onPressed: () async {
                     final confirm = await showDialog(
@@ -140,8 +145,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    side: const BorderSide(color: Color(0xFFD1D5DB)),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    side: const BorderSide(
+                                      color: Color(0xFFD1D5DB),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: Text(
                                     "Cancel",
@@ -163,7 +172,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: Text(
                                     "Sign out",
@@ -176,8 +187,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               ),
                             ],
                           ),
-                          
-                          
                         ],
                       ),
                     );
@@ -190,9 +199,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     }
                   },
                   style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(
-                      Color(0xFFFFF1F2)
-                    ),
+                    backgroundColor: WidgetStatePropertyAll(Color(0xFFFFF1F2)),
                     shape: WidgetStatePropertyAll(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -229,8 +236,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             },
           ),
           const MapScreen(),
+          const ReportScreen(),
           const AnalyticsScreen(),
-          const PredictScreen(),
           const AlertsScreen(),
         ],
         onPageChanged: (page) {
@@ -239,50 +246,78 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           });
         },
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 64.sp,
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Colors.grey.shade300, width: 1),
-          ),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          iconSize: 24,
-          selectedLabelStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: 10,
-          ),
-          unselectedLabelStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: 10,
-          ),
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          onTap: _onTappedBar,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.location_pin),
-              label: 'Map',
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildBottomNavItem(
+                    icon: Icons.home,
+                    label: 'Home',
+                    index: 0,
+                  ),
+                  _buildBottomNavItem(
+                    icon: Icons.location_pin,
+                    label: 'Map',
+                    index: 1,
+                  ),
+                  _buildBottomNavItem(
+                    label: 'Report', 
+                    index: 2
+                  ),
+                  _buildBottomNavItem(
+                    icon: Icons.bar_chart,
+                    label: 'Analytics',
+                    index: 3,
+                  ),
+                  _buildBottomNavItem(
+                    icon: Icons.notifications,
+                    label: 'Alerts',
+                    index: 4,
+                  ),
+                ],
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Analytics',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.trending_up),
-              label: 'Predict',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications),
-              label: 'Alerts',
+            Positioned(
+              top: -24.sp,
+              child: GestureDetector(
+                onTap: () => _onTappedBar(2),
+                child: Container(
+                  width: 58.sp,
+                  height: 58.sp,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 18,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.campaign,
+                      color: Colors.white,
+                      size: 28.sp,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.black45,
-          currentIndex: _selectedIndex,
         ),
       ),
     );
@@ -293,6 +328,48 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       _selectedIndex = value;
     });
     _pageController.jumpToPage(value);
+  }
+
+  Widget _buildBottomNavItem({
+    IconData? icon,
+    required String label,
+    required int index,
+  }) {
+    final isSelected = _selectedIndex == index;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onTappedBar(index),
+        borderRadius: BorderRadius.all(Radius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null)
+                Icon(
+                  icon,
+                  size: 24,
+                  color: isSelected ? Colors.blue : Colors.black45,
+                )
+              else
+                const SizedBox(height: 24),
+
+              const SizedBox(height: 2),
+
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.blue : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String formatPhone(String phone) {
@@ -314,11 +391,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade300, 
-            width: 1
-          )
-        )
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -341,9 +415,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: gradientColors,
-                      ),
+                      gradient: LinearGradient(colors: gradientColors),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     child: Icon(icon, color: Colors.white),
