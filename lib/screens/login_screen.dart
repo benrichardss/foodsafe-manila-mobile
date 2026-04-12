@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:foodsafe_manila/widgets/snackbar_widgets.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../widgets/snackbar_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../database/db.dart';
 import '../services/session.dart';
@@ -17,7 +18,6 @@ class _LogInScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _showPass = false;
-  bool _remember = false;
   bool _loading = false;
 
   @override
@@ -164,9 +164,11 @@ class _LogInScreenState extends State<LoginScreen> {
                                 controller: _phoneCtrl,
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.next,
-                                decoration: const InputDecoration(
-                                  hintText: "0912 345 6789",
-                                  prefixIcon: Icon(Icons.phone_outlined),
+                                style: GoogleFonts.inter(),
+                                decoration: InputDecoration(
+                                  hintText: "Enter phone number",
+                                  hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+                                  prefixIcon: Icon(LucideIcons.phone),
                                 ),
                                 validator: (v) {
                                   final value = (v ?? "").trim();
@@ -200,16 +202,18 @@ class _LogInScreenState extends State<LoginScreen> {
                                 obscureText: !_showPass,
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) => _signIn(),
+                                style: GoogleFonts.inter(),
                                 decoration: InputDecoration(
-                                  hintText: "••••••••",
-                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  hintText: "Enter password",
+                                  hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+                                  prefixIcon: const Icon(LucideIcons.lock),
                                   suffixIcon: IconButton(
                                     onPressed: () =>
                                         setState(() => _showPass = !_showPass),
                                     icon: Icon(
                                       _showPass
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
+                                          ? LucideIcons.eye
+                                          : LucideIcons.eyeOff,
                                     ),
                                   ),
                                 ),
@@ -222,25 +226,11 @@ class _LogInScreenState extends State<LoginScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 8),
 
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Checkbox(
-                                  value: _remember,
-                                  onChanged: (v) =>
-                                      setState(() => _remember = v ?? false),
-                                  activeColor: const Color(0xFF2563EB),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Remember me",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      color: Color(0xFF4B5563),
-                                    ),
-                                  ),
-                                ),
+                                
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pushNamed(

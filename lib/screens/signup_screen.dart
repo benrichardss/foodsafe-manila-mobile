@@ -1,3 +1,5 @@
+import 'package:lucide_icons/lucide_icons.dart';
+
 import '../services/otp_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -208,7 +210,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         child: TextButton.icon(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
-                            Icons.arrow_back,
+                            LucideIcons.arrowLeft,
                             color: Colors.white70,
                           ),
                           label: Text(
@@ -380,9 +382,11 @@ class _SignupScreenState extends State<SignupScreen> {
             controller: _usernameCtrl,
             textInputAction: TextInputAction.next,
             validator: _required,
-            decoration: const InputDecoration(
-              hintText: "Juan Dela Cruz",
-              prefixIcon: Icon(Icons.person_outline),
+            style: GoogleFonts.inter(),
+            decoration: InputDecoration(
+              hintText: "Enter name",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: Icon(LucideIcons.user),
             ),
           ),
         ),
@@ -412,14 +416,15 @@ class _SignupScreenState extends State<SignupScreen> {
               }
               return null;
             },
-            decoration: const InputDecoration(
-              hintText: "0912 345 6789",
-              prefixIcon: Icon(Icons.phone_outlined),
+            
+            style: GoogleFonts.inter(),
+            decoration: InputDecoration(
+              hintText: "Enter phone number",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: Icon(LucideIcons.phone),
             ),
           ),
         ),
-
-        _helper("We'll send SMS alerts to this number"),
         const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
@@ -475,12 +480,14 @@ class _SignupScreenState extends State<SignupScreen> {
               }
               return null;
             },
+            style: GoogleFonts.inter(),
             decoration: InputDecoration(
-              hintText: "••••••••",
-              prefixIcon: const Icon(Icons.lock_outline),
+              hintText: "Enter password",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: const Icon(LucideIcons.lock),
               suffixIcon: IconButton(
                 onPressed: () => setState(() => _showPass = !_showPass),
-                icon: Icon(_showPass ? Icons.visibility : Icons.visibility_off),
+                icon: Icon(_showPass ? LucideIcons.eye : LucideIcons.eyeOff),
               ),
             ),
           ),
@@ -505,14 +512,16 @@ class _SignupScreenState extends State<SignupScreen> {
               }
               return null;
             },
+            style: GoogleFonts.inter(),
             decoration: InputDecoration(
-              hintText: "••••••••",
-              prefixIcon: const Icon(Icons.lock_outline),
+              hintText: "Confirm password",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: const Icon(LucideIcons.lock),
               suffixIcon: IconButton(
                 onPressed: () =>
                     setState(() => _showConfirmPass = !_showConfirmPass),
                 icon: Icon(
-                  _showConfirmPass ? Icons.visibility : Icons.visibility_off,
+                  _showConfirmPass ? LucideIcons.eye : LucideIcons.eyeOff,
                 ),
               ),
             ),

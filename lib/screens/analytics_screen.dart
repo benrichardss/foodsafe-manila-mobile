@@ -21,6 +21,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
+        shape: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade300, // light gray border
+            width: 1,
+          ),
+        ),
         automaticallyImplyLeading: false,
         surfaceTintColor: const Color(0xFFF9FAFB),
         backgroundColor: Colors.white,

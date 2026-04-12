@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../database/db.dart';
 import '../services/session.dart';
@@ -20,6 +21,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   final _phoneCtrl = TextEditingController();
 
   bool _loading = false;
+  bool _updated = false;
 
   @override
   void dispose() {
@@ -60,14 +62,15 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         // update session data too (VERY IMPORTANT)
         user!['username'] = _nameCtrl.text.trim();
         user!['phone_number'] = _phoneCtrl.text.trim();
+        _updated = true;
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile updated successfully")),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Update failed")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Update failed")));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -100,10 +103,14 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   InkWell(
-                    onTap: () => Navigator.pop(context),
+                    onTap: () => Navigator.pop(context, _updated),
                     child: Row(
                       children: [
-                        Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                        Icon(
+                          LucideIcons.arrowLeft,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           "Back",
@@ -161,12 +168,18 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                               child: TextFormField(
                                 controller: _nameCtrl,
                                 validator: _required,
+                                style: GoogleFonts.inter(),
                                 decoration: InputDecoration(
                                   prefixIcon: Icon(
-                                    Icons.person_outlined,
-                                    color: Theme.of(context).colorScheme.outline,
+                                    LucideIcons.user,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
                                   ),
-                                  hintText: 'Juan Dela Cruz',
+                                  hintText: 'Enter name',
+                                  hintStyle: GoogleFonts.inter(
+                                    color: Color(0xFFD1D5DB),
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                   ),
@@ -183,12 +196,18 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                                 controller: _phoneCtrl,
                                 validator: _required,
                                 keyboardType: TextInputType.phone,
+                                style: GoogleFonts.inter(),
                                 decoration: InputDecoration(
                                   prefixIcon: Icon(
-                                    Icons.phone_outlined,
-                                    color: Theme.of(context).colorScheme.outline,
+                                    LucideIcons.phone,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
                                   ),
-                                  hintText: '+63 912 345 6789',
+                                  hintText: 'Enter phone number',
+                                  hintStyle: GoogleFonts.inter(
+                                    color: Color(0xFFD1D5DB),
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                   ),
@@ -254,19 +273,19 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                                         ),
                                       )
                                     : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.save),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "Save Changes",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w800,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(LucideIcons.save),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            "Save Changes",
+                                            style: GoogleFonts.inter(
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                           ),
-                                        ),
-                                      ]
-                                    ),
+                                        ],
+                                      ),
                               ),
                             ),
                           ],
@@ -285,7 +304,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 }
 
 String? _required(String? v) =>
-      (v == null || v.isEmpty) ? "Required field" : null;
+    (v == null || v.isEmpty) ? "Required field" : null;
 
 class _InputField extends StatelessWidget {
   final String label;

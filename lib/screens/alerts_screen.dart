@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../widgets/alerts_widgets.dart';
 
 class AlertsScreen extends StatefulWidget {
@@ -85,6 +86,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
+        shape: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade300, // light gray border
+            width: 1,
+          ),
+        ),
         surfaceTintColor: const Color(0xFFF9FAFB),
         backgroundColor: Colors.white,
         toolbarHeight: 92, // stays constant
@@ -127,7 +134,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Icon(
-                  Icons.filter_list_rounded,
+                  LucideIcons.listFilter,
                   size: 20,
                   color: Color(0xFF4B5563),
                 ),

@@ -19,11 +19,12 @@ class Database {
     }
   }
 
-  static Future<Map<String, dynamic>?> login(String phone, String password) async {
+  static Future<Map<String, dynamic>?> login(
+    String phone,
+    String password,
+  ) async {
     try {
-      var user = await userCollection!.findOne({
-        'phone_number': phone,
-      });
+      var user = await userCollection!.findOne({'phone_number': phone});
 
       if (user == null) {
         return null;
@@ -47,10 +48,8 @@ class Database {
   }) async {
     try {
       phone = phone.replaceAll(" ", "");
-      
-      var existingUser = await userCollection!.findOne({
-        'phone_number': phone,
-      });
+
+      var existingUser = await userCollection!.findOne({'phone_number': phone});
 
       // prevent duplicate phone numbers
       if (existingUser != null) {
@@ -81,9 +80,7 @@ class Database {
 
       var result = await userCollection!.updateOne(
         where.id(id),
-        modify
-            .set('username', username)
-            .set('phone_number', phone),
+        modify.set('username', username).set('phone_number', phone),
       );
 
       return result.isSuccess;
@@ -109,6 +106,51 @@ class Database {
     } catch (e) {
       log("Update password error: $e");
       return false;
+    }
+  }
+
+  static Future<bool> submitReport({
+    required String reportId,
+    required ObjectId reportedBy,
+    required String reportLocation,
+    required String symptoms,
+    required int numberOfPeopleAffected,
+    required String foodSource,
+    required String foodLocation,
+  }) async {
+    try {
+      var reportCollection = db!.collection('reports');
+
+      await reportCollection.insertOne({
+        'report_id': reportId,
+        'reported_by': reportedBy,
+        'report_location': reportLocation,
+        'symptoms': symptoms,
+        'number_of_people_affected': numberOfPeopleAffected,
+        'food_source': foodSource,
+        'food_location': foodLocation,
+        'reported_at': DateTime.now(),
+      });
+
+      return true;
+    } catch (e) {
+      log("Submit report error: $e");
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getUserReports(
+    ObjectId userId,
+  ) async {
+    try {
+      var reportCollection = db!.collection('reports');
+      var reports = await reportCollection
+          .find(where.eq('reported_by', userId))
+          .toList();
+      return reports;
+    } catch (e) {
+      log("Get reports error: $e");
+      return [];
     }
   }
 }

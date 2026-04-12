@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:foodsafe_manila/screens/alerts_screen.dart';
 import 'package:foodsafe_manila/screens/analytics_screen.dart';
-import 'package:foodsafe_manila/screens/report_screen.dart';
+import 'package:foodsafe_manila/screens/report_history_screen.dart';
+import 'package:foodsafe_manila/screens/report_form_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
 import '../services/session.dart';
@@ -18,12 +20,12 @@ class BottomNavBarScreen extends StatefulWidget {
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final user = Session.currentUser;
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
   @override
   Widget build(BuildContext context) {
+  final user = Session.currentUser;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.white,
@@ -96,18 +98,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 ),
               ),
               _buildMenuTile(
-                icon: Icons.person,
+                icon: LucideIcons.user,
                 gradientColors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                 title: "Personal Information",
                 subtitle: "Update your account details",
                 page: const PersonalInfoScreen(),
               ),
               _buildMenuTile(
-                icon: Icons.article,
+                icon: LucideIcons.clipboardList,
                 gradientColors: [Color(0xFF10B981), Color(0xFF059669)],
                 title: "My Reports",
                 subtitle: "View and manage your submitted reports",
-                page: const PersonalInfoScreen(),
+                page: const ReportHistoryScreen(),
               ),
               Spacer(),
               Container(
@@ -209,7 +211,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout, color: Colors.red),
+                      Icon(LucideIcons.logOut, color: Colors.red),
                       SizedBox(width: 5),
                       Text(
                         'Sign out',
@@ -228,6 +230,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         ),
       ),
       body: PageView(
+        physics: const NeverScrollableScrollPhysics(),
         controller: _pageController,
         children: <Widget>[
           HomeScreen(
@@ -236,7 +239,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             },
           ),
           const MapScreen(),
-          const ReportScreen(),
           const AnalyticsScreen(),
           const AlertsScreen(),
         ],
@@ -246,8 +248,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           });
         },
       ),
-      bottomNavigationBar: SizedBox(
+      bottomNavigationBar: Container(
         height: 64.sp,
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1))
+        ),
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.topCenter,
@@ -261,25 +266,25 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildBottomNavItem(
-                    icon: Icons.home,
+                    icon: LucideIcons.home,
                     label: 'Home',
                     index: 0,
                   ),
                   _buildBottomNavItem(
-                    icon: Icons.location_pin,
+                    icon: LucideIcons.mapPin,
                     label: 'Map',
                     index: 1,
                   ),
-                  _buildBottomNavItem(icon: null, label: 'Report', index: 2),
+                  _buildBottomNavItem(label: 'Report',),
                   _buildBottomNavItem(
-                    icon: Icons.bar_chart,
+                    icon: LucideIcons.barChart3,
                     label: 'Analytics',
-                    index: 3,
+                    index: 2,
                   ),
                   _buildBottomNavItem(
-                    icon: Icons.notifications,
+                    icon: LucideIcons.bell,
                     label: 'Alerts',
-                    index: 4,
+                    index: 3,
                   ),
                 ],
               ),
@@ -287,7 +292,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             Positioned(
               top: -24.sp,
               child: GestureDetector(
-                onTap: () => _onTappedBar(2),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ReportFormScreen()),
+                ),
                 child: Container(
                   width: 58.sp,
                   height: 58.sp,
@@ -330,7 +338,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   Widget _buildBottomNavItem({
     IconData? icon,
     required String label,
-    required int index,
+    int? index,
   }) {
     final isSelected = _selectedIndex == index;
 
@@ -365,7 +373,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return Expanded(
       child: icon != null
           ? InkWell(
-              onTap: () => _onTappedBar(index),
+              onTap: () => _onTappedBar(index!),
               borderRadius: BorderRadius.all(Radius.circular(24)),
               child: navItem,
             )
@@ -400,11 +408,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         child: InkWell(
           splashColor: const Color(0xFF2563EB).withValues(alpha: 0.15),
           highlightColor: Colors.black.withValues(alpha: 0.04),
-          onTap: () {
-            Navigator.push(
+           onTap: () async {
+            final updated = await Navigator.push<bool>(
               context,
               MaterialPageRoute(builder: (context) => page),
             );
+
+            if (updated == true && mounted) {
+              setState(() {});
+            }
           },
           child: Ink(
             child: Padding(
@@ -447,7 +459,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     ),
                   ),
 
-                  const Icon(Icons.chevron_right, color: Colors.grey),
+                  const Icon(LucideIcons.chevronRight, color: Colors.grey),
                 ],
               ),
             ),

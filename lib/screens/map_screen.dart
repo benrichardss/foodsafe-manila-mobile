@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -148,7 +149,7 @@ class _MapScreenState extends State<MapScreen> {
                       radius: 18,
                       backgroundColor: lighten(location.color),
                       child: Icon(
-                        Icons.warning_amber_rounded,
+                        LucideIcons.alertTriangle,
                         color: location.color,
                         size: 20,
                       ),
@@ -177,7 +178,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 16),
+                      icon: const Icon(LucideIcons.x, size: 16),
                       onPressed: () => Navigator.pop(context),
                       visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                     ),
@@ -225,7 +226,7 @@ class _MapScreenState extends State<MapScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(
-                        Icons.info_outline,
+                        LucideIcons.info,
                         size: 16,
                         color: Color(0xFF1980DD),
                       ),

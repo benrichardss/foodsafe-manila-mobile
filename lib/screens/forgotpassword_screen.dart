@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodsafe_manila/services/session.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../database/db.dart';
 import '../services/otp_service.dart';
@@ -204,7 +205,7 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                         child: TextButton.icon(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
-                            Icons.arrow_back,
+                            LucideIcons.arrowLeft,
                             color: Colors.white70,
                           ),
                           label: Text(
@@ -380,9 +381,11 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
               }
               return null;
             },
-            decoration: const InputDecoration(
-              hintText: "0912 345 6789",
-              prefixIcon: Icon(Icons.phone_outlined),
+            style: GoogleFonts.inter(),
+            decoration: InputDecoration(
+              hintText: "Enter phone number",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: Icon(LucideIcons.phone),
             ),
           ),
         ),
@@ -620,12 +623,14 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
               }
               return null;
             },
+            style: GoogleFonts.inter(),
             decoration: InputDecoration(
-              hintText: "••••••••",
-              prefixIcon: const Icon(Icons.lock_outline),
+              hintText: "Enter password",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: const Icon(LucideIcons.lock),
               suffixIcon: IconButton(
                 onPressed: () => setState(() => _showPass = !_showPass),
-                icon: Icon(_showPass ? Icons.visibility : Icons.visibility_off),
+                icon: Icon(_showPass ? LucideIcons.eye : LucideIcons.eyeOff),
               ),
             ),
           ),
@@ -650,14 +655,16 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
               }
               return null;
             },
+            style: GoogleFonts.inter(),
             decoration: InputDecoration(
-              hintText: "••••••••",
-              prefixIcon: const Icon(Icons.lock_outline),
+              hintText: "Enter password",
+              hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+              prefixIcon: const Icon(LucideIcons.lock),
               suffixIcon: IconButton(
                 onPressed: () =>
                     setState(() => _showConfirmPass = !_showConfirmPass),
                 icon: Icon(
-                  _showConfirmPass ? Icons.visibility : Icons.visibility_off,
+                  _showConfirmPass ? LucideIcons.eye : LucideIcons.eyeOff,
                 ),
               ),
             ),
