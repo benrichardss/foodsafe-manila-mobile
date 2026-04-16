@@ -8,10 +8,10 @@ class Database {
 
   static Future<void> connect() async {
     try {
-      db = await Db.create(MONGO_URI);
+      db = await Db.create(mongoUri);
       await db!.open();
 
-      userCollection = db!.collection(COLLECTION_NAME);
+      userCollection = db!.collection(collectionName);
 
       log("Connected to MongoDB");
     } catch (e) {

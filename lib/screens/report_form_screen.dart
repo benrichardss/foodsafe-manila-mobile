@@ -718,7 +718,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 ),
               ),
             ),
-            value: selectedDistrict,
+            initialValue: selectedDistrict,
             items:
                 [
                   'Tondo',
