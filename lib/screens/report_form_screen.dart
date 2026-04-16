@@ -785,7 +785,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     side: const BorderSide(
-                                      color: Color(0xFFD1D5DB),
+                                      color: Color(0xFF2563EB),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 12,
@@ -795,7 +795,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                     "Cancel",
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: Color(0xFF2563EB),
                                     ),
                                   ),
                                 ),
@@ -986,13 +986,13 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             label: const Text('Done'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: Colors.black87,
+              foregroundColor: Color(0xFF2563EB),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              side: BorderSide(color: Color(0xFFD1D5DB)),
+              side: BorderSide(color: Color(0xFF2563EB)),
               textStyle: GoogleFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

@@ -72,55 +72,12 @@ class _LogInScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 36, 16, 12),
+                  padding: EdgeInsets.fromLTRB(16, 64, 16, 24),
                   child: Column(
                     children: [
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: const [
-                              BoxShadow(
-                                blurRadius: 24,
-                                offset: Offset(0, 12),
-                                color: Color(0x33000000),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons
-                                .monitor_heart_outlined, // lucide-activity vibe
-                            size: 56,
-                            color: Color(0xFF2563EB),
-                          ),
-                        ),
+                      Image.asset(
+                        'assets/foodsafe_logo.png',
                       ),
-
-                      const SizedBox(height: 18),
-
-                      // Title
-                      Text(
-                        "FoodSafe",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Stay informed about health risks in your area!",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Color(0xFFBFDBFE),
-                        ),
-                      ),
-
-                      const SizedBox(height: 22),
                     ],
                   ),
                 ),

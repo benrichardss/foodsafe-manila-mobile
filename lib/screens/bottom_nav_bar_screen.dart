@@ -148,7 +148,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     side: const BorderSide(
-                                      color: Color(0xFFD1D5DB),
+                                      color: Color(0xFF2563EB),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 12,
@@ -158,7 +158,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                     "Cancel",
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: Color(0xFF2563EB),
                                     ),
                                   ),
                                 ),

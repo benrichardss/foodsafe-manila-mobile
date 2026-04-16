@@ -66,21 +66,11 @@ class _HeaderState extends State<Header> {
 
           /// TOP BAR
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("FoodSafe",
-                        style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white)),
-                    Text("Stay informed about health risks in your area!",
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: Colors.white)),
-                  ],
-                ),
+              Image.asset(
+                'assets/foodsafe_logo.png',
+                scale: 7,
               ),
 
               InkWell(

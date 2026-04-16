@@ -16,10 +16,66 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   List<Map<String, dynamic>> _reports = [];
   bool _isLoading = true;
 
+  int _currentPage = 0;
+  final int _itemsPerPage = 10;
+  final ScrollController _scrollController = ScrollController();
+  bool _showPagination = false;
+  bool _showFirstPageInput = false;
+  bool _showSecondPageInput = false;
+  final TextEditingController _pageController = TextEditingController();
+  final FocusNode _pageFocusNode = FocusNode();
+  final TextEditingController _pageController2 = TextEditingController();
+  final FocusNode _pageFocusNode2 = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _fetchReports();
+
+    _pageFocusNode.addListener(() {
+      if (!_pageFocusNode.hasFocus && _showFirstPageInput) {
+        setState(() {
+          _showFirstPageInput = false;
+        });
+        _pageController.clear();
+      }
+    });
+
+    _pageFocusNode2.addListener(() {
+      if (!_pageFocusNode2.hasFocus && _showSecondPageInput) {
+        setState(() {
+          _showSecondPageInput = false;
+        });
+        _pageController2.clear();
+      }
+    });
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        if (!_showPagination) {
+          setState(() {
+            _showPagination = true;
+          });
+        }
+      } else {
+        if (_showPagination) {
+          setState(() {
+            _showPagination = false;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _pageController.dispose();
+    _pageFocusNode.dispose();
+    _pageController2.dispose();
+    _pageFocusNode2.dispose();
+    super.dispose();
   }
 
   int get _totalSymptoms {
@@ -31,6 +87,10 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       }
     }
     return total;
+  }
+
+  String formatReportId(DateTime dateTime) {
+    return 'RPT-${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   String _formatDate(DateTime dateTime) {
@@ -56,7 +116,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     const months = [
       '', // index 0 unused
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return months[month];
   }
@@ -80,10 +140,52 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     }
 
     final reports = await Database.getUserReports(userId);
+
+    reports.sort((a, b) {
+      final aDate = a['reported_at'] as DateTime?;
+      final bDate = b['reported_at'] as DateTime?;
+
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate); // descending
+    });
+
     setState(() {
       _reports = reports;
       _isLoading = false;
     });
+  }
+
+  List<Map<String, dynamic>> get _paginatedReports {
+    return _reports
+        .skip(_currentPage * _itemsPerPage)
+        .take(_itemsPerPage)
+        .toList();
+  }
+
+  int get _totalPages {
+    return (_reports.length / _itemsPerPage).ceil();
+  }
+
+  List<dynamic> _buildPageModel() {
+    final int total = _totalPages;
+    final int current = _currentPage + 1;
+
+    if (total <= 5) {
+      return List.generate(total, (i) => i + 1);
+    }
+
+    // 🔹 CASE 1: Near start
+    if (current <= 3) {
+      return [1, 2, 3, '...', total];
+    }
+
+    // 🔹 CASE 2: Near end
+    if (current >= total - 2) {
+      return [1, '...', total - 2, total - 1, total];
+    }
+
+    // 🔹 CASE 3: Middle
+    return [1, '...', current, '...', total];
   }
 
   int get _totalPeopleAffected {
@@ -156,7 +258,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -200,82 +302,108 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
               // SCROLLABLE AREA
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue,))
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.blue,
+                        ),
+                      )
                     : _reports.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center, 
-                              children: [ 
-                                Icon( 
-                                  LucideIcons.fileText, 
-                                  size: 64, color: Colors.grey.shade300,
-                                ), 
-                                const SizedBox(height: 16), 
-                                Text( 
-                                  'No reports found', 
-                                  style: GoogleFonts.inter( 
-                                    fontSize: 18, 
-                                    color: Colors.grey.shade500,
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.fileText,
+                              size: 64,
+                              color: Colors.grey.shade300,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No reports found',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Your submitted reports will appear here',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              itemCount: _paginatedReports.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == _paginatedReports.length) {
+                                  return _buildPaginationControls();
+                                }
+
+                                final report = _paginatedReports[index];
+
+                                final reportedAtUtc =
+                                    report['reported_at'] as DateTime?;
+                                final reportedAt = reportedAtUtc?.toLocal();
+                                final symptomsString =
+                                    report['symptoms'] as String? ?? '';
+
+                                final symptomsList = symptomsString
+                                    .split(',')
+                                    .map((s) => s.trim())
+                                    .where((s) => s.isNotEmpty)
+                                    .toList();
+
+                                final reportLocation =
+                                    report['report_location'] as String? ??
+                                    'Unknown';
+
+                                final exposureSite =
+                                    (report['food_location'] as String?)
+                                        ?.trim() ??
+                                    'Unknown';
+
+                                final foodSource =
+                                    (report['food_source'] as String?)
+                                        ?.trim() ??
+                                    'Unknown';
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: ReportCard(
+                                    reportId: reportedAt != null
+                                        ? formatReportId(reportedAt)
+                                        : 'Unknown',
+                                    status: 'Reviewed',
+                                    date: reportedAt != null
+                                        ? _formatDate(reportedAt)
+                                        : 'Unknown',
+                                    time: reportedAt != null
+                                        ? _formatTime(reportedAt)
+                                        : 'Unknown',
+                                    symptoms: symptomsList,
+                                    reportLocation: reportLocation,
+                                    exposureSite: exposureSite,
+                                    foodSource: foodSource,
+                                    affectedPeople:
+                                        report['number_of_people_affected']
+                                            as int? ??
+                                        0,
                                   ),
-                                ), 
-                                const SizedBox(height: 8),
-                                Text( 
-                                  'Your submitted reports will appear here', 
-                                  style: GoogleFonts.inter( 
-                                    fontSize: 14, 
-                                    color: Colors.grey.shade400, 
-                                  ), 
-                                ),
-                              ], 
-                            ), 
-                          )
-                        : ListView.builder(
-                            itemCount: _reports.length,
-                            itemBuilder: (context, index) {
-                              final report = _reports[index];
-
-                              final reportedAtUtc = report['reported_at'] as DateTime?;
-                              final reportedAt = reportedAtUtc?.toLocal();
-                              final symptomsString =
-                                  report['symptoms'] as String? ?? '';
-
-                              final symptomsList = symptomsString
-                                  .split(',')
-                                  .map((s) => s.trim())
-                                  .where((s) => s.isNotEmpty)
-                                  .toList();
-
-                              final reportLocation =
-                                  report['report_location'] as String? ?? 'Unknown';
-
-                              final exposureSite =
-                                  (report['food_location'] as String?)?.trim() ?? 'Unknown';
-
-                              final foodSource =
-                                  (report['food_source'] as String?)?.trim() ?? 'Unknown';
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: ReportCard(
-                                  reportId:
-                                      report['report_id'] as String? ?? 'Unknown',
-                                  status: 'Reviewed',
-                                  date: reportedAt != null
-                                      ? _formatDate(reportedAt)
-                                      : 'Unknown',
-                                  time: reportedAt != null
-                                      ? _formatTime(reportedAt)
-                                      : 'Unknown',
-                                  symptoms: symptomsList,
-                                  reportLocation: reportLocation,
-                                  exposureSite: exposureSite,
-                                  foodSource: foodSource,
-                                  affectedPeople:
-                                      report['number_of_people_affected'] as int? ?? 0,
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -331,6 +459,316 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
           Text(
             label,
             style: GoogleFonts.inter(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDotWidget(int dotIndex, int dotCount, bool isMiddleRange) {
+    if (dotCount == 2 && isMiddleRange) {
+      final isShown = dotIndex == 1
+          ? _showFirstPageInput
+          : _showSecondPageInput;
+      final controller = dotIndex == 1 ? _pageController : _pageController2;
+      final focusNode = dotIndex == 1 ? _pageFocusNode : _pageFocusNode2;
+      if (isShown) {
+        return Container(
+          width: 36,
+          height: 32,
+          margin: const EdgeInsets.all(4),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            textAlignVertical: TextAlignVertical.center,
+            style: GoogleFonts.inter(fontSize: 14),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFF2563EB)),
+              ),
+            ),
+            onSubmitted: (value) {
+              final page = int.tryParse(value);
+              setState(() {
+                if (page != null && page >= 1 && page <= _totalPages) {
+                  _currentPage = page - 1;
+                }
+                if (dotIndex == 1) {
+                  _showFirstPageInput = false;
+                } else {
+                  _showSecondPageInput = false;
+                }
+              });
+              if (page != null && page >= 1 && page <= _totalPages) {
+                _scrollController.jumpTo(0);
+              }
+              controller.clear();
+            },
+          ),
+        );
+      } else {
+        return InkWell(
+          onTap: () {
+            setState(() {
+              if (dotIndex == 1) {
+                _showFirstPageInput = true;
+                _showSecondPageInput = false;
+                _pageController.clear();
+              } else {
+                _showSecondPageInput = true;
+                _showFirstPageInput = false;
+                _pageController2.clear();
+              }
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              focusNode.requestFocus();
+            });
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            height: 32,
+            width: 32,
+            child: Center(
+              child: Text(
+                '...',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF4B5563),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+      }
+    } else {
+      if (_showFirstPageInput) {
+        return Container(
+          width: 36,
+          height: 32,
+          margin: const EdgeInsets.all(4),
+          child: TextField(
+            controller: _pageController,
+            focusNode: _pageFocusNode,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            textAlignVertical: TextAlignVertical.center,
+            style: GoogleFonts.inter(fontSize: 14),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFF2563EB)),
+              ),
+            ),
+            onSubmitted: (value) {
+              final page = int.tryParse(value);
+              if (page != null && page >= 1 && page <= _totalPages) {
+                setState(() {
+                  _currentPage = page - 1;
+                });
+                _scrollController.jumpTo(0);
+              }
+              setState(() {
+                _showFirstPageInput = false;
+              });
+              _pageController.clear();
+            },
+          ),
+        );
+      } else {
+        return InkWell(
+          onTap: () {
+            setState(() {
+              _showFirstPageInput = true;
+              _pageController.clear();
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _pageFocusNode.requestFocus();
+            });
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            height: 32,
+            width: 32,
+            child: Center(
+              child: Text(
+                '...',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF4B5563),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildPaginationControls() {
+    final pages = _buildPageModel();
+    final int dotCount = pages.where((p) => p == '...').length;
+    final bool isMiddleRange =
+        _totalPages > 5 &&
+        _currentPage + 1 > 3 &&
+        _currentPage + 1 < _totalPages - 2;
+
+    if (_totalPages <= 1) return const SizedBox.shrink();
+
+    Widget buildCircularButton({
+      required String text,
+      required VoidCallback? onPressed,
+      required bool isActive,
+      required bool isDisabled,
+    }) {
+      if (isActive) {
+        // Active page: circular blue button
+        return Container(
+          width: 32,
+          height: 32,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF2563EB),
+          ),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(20),
+            child: Center(
+              child: Text(
+                text,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+      } else {
+        // Inactive page: regular text button
+        return InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            height: 32,
+            width: 32,
+            child: Center(
+              child: Text(
+                text,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF4B5563),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    int dotIndex = 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Back button
+          TextButton(
+            onPressed: _currentPage > 0
+                ? () {
+                    setState(() {
+                      _currentPage--;
+                      _showFirstPageInput = false;
+                      _showSecondPageInput = false;
+                    });
+                    _scrollController.jumpTo(0);
+                  }
+                : null,
+            child: Text(
+              '< Back',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: _currentPage > 0 ? const Color(0xFF2563EB) : Colors.grey,
+              ),
+            ),
+          ),
+
+          if (_totalPages > 1) ...[
+            Row(
+              children: [
+                for (final p in pages) ...[
+                  if (p == '...')
+                    _buildDotWidget(++dotIndex, dotCount, isMiddleRange)
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: buildCircularButton(
+                        text: '$p',
+                        isActive: p == _currentPage + 1,
+                        isDisabled: false,
+                        onPressed: () {
+                          setState(() {
+                            _currentPage = p - 1;
+                            _showFirstPageInput = false;
+                            _showSecondPageInput = false;
+                          });
+                          _scrollController.jumpTo(0);
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ],
+
+          // Next button
+          TextButton(
+            onPressed: _currentPage < _totalPages - 1
+                ? () {
+                    setState(() {
+                      _currentPage++;
+                      _showFirstPageInput = false;
+                      _showSecondPageInput = false;
+                    });
+                    _scrollController.jumpTo(0);
+                  }
+                : null,
+            child: Text(
+              'Next >',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: _currentPage < _totalPages - 1
+                    ? const Color(0xFF2563EB)
+                    : Colors.grey,
+              ),
+            ),
           ),
         ],
       ),
@@ -641,50 +1079,50 @@ class ReportCard extends StatelessWidget {
                         ],
                       ),
 
-                        Container(
-                          margin: const EdgeInsets.only(top: 12),
-                          padding: const EdgeInsets.only(top: 12),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: Colors.grey.shade200),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                LucideIcons.map,
-                                size: 18,
-                                color: Colors.orange.shade600,
-                              ),
-                              const SizedBox(width: 8),
-
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Possible Exposure Site',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      exposureSite,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.orange.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        padding: const EdgeInsets.only(top: 12),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.grey.shade200),
                           ),
                         ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              LucideIcons.map,
+                              size: 18,
+                              color: Colors.orange.shade600,
+                            ),
+                            const SizedBox(width: 8),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Possible Exposure Site',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    exposureSite,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

@@ -197,74 +197,32 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
                   child: Column(
                     children: [
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            LucideIcons.arrowLeft,
-                            color: Colors.white70,
-                          ),
-                          label: Text(
-                            "Back to Login",
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
-                              BoxShadow(
-                                blurRadius: 24,
-                                offset: Offset(0, 12),
-                                color: Color(0x33000000),
+                        child: InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.chevronLeft,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 4,),
+                              Text(
+                                "Back",
+                                style: GoogleFonts.inter(color: Colors.white70),
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons
-                                .monitor_heart_outlined, // lucide-activity vibe
-                            size: 44,
-                            color: Color(0xFF2563EB),
-                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 18),
-
-                      // Title
-                      Text(
-                        "Change Password",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                      const SizedBox(height: 16),
+                      Image.asset(
+                        'assets/foodsafe_logo.png',
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Enter your phone number to reset password",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Color(0xFFBFDBFE),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
                     ],
                   ),
                 ),
