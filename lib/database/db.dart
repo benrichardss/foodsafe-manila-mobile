@@ -114,7 +114,6 @@ class Database {
     required ObjectId reportedBy,
     required String reportLocation,
     required String symptoms,
-    required int numberOfPeopleAffected,
     required String foodSource,
     required String foodLocation,
   }) async {
@@ -126,7 +125,6 @@ class Database {
         'reported_by': reportedBy,
         'report_location': reportLocation,
         'symptoms': symptoms,
-        'number_of_people_affected': numberOfPeopleAffected,
         'food_source': foodSource,
         'food_location': foodLocation,
         'reported_at': DateTime.now(),
@@ -151,6 +149,23 @@ class Database {
     } catch (e) {
       log("Get reports error: $e");
       return [];
+    }
+  }
+
+  static Future<DateTime?> getLastReportTime(ObjectId userId) async {
+    try {
+      var reportCollection = db!.collection('reports');
+
+      final latestReport = await reportCollection
+          .find(where.eq('reported_by', userId).sortBy('reported_at', descending: true).limit(1))
+          .toList();
+
+      if (latestReport.isEmpty) return null;
+
+      return latestReport.first['reported_at'] as DateTime;
+    } catch (e) {
+      log("Get last report error: $e");
+      return null;
     }
   }
 }

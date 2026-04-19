@@ -188,12 +188,11 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     return [1, '...', current, '...', total];
   }
 
-  int get _totalPeopleAffected {
-    int total = 0;
-    for (var report in _reports) {
-      total += (report['number_of_people_affected'] as int?) ?? 0;
-    }
-    return total;
+  int get _totalDistrictsReported {
+    return _reports.where((report) {
+      var value = report['food_location'];
+      return value != null && value != "Not sure";
+    }).length;
   }
 
   String _formatNumber(int number) {
@@ -235,22 +234,12 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
         toolbarHeight: 92,
         titleSpacing: 16,
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
             Text(
               'Report History',
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${_reports.length} total ${_reports.length == 1 ? 'report' : 'reports'}',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: const Color(0xFF4B5563),
               ),
             ),
           ],
@@ -287,11 +276,11 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      icon: LucideIcons.users,
+                      icon: LucideIcons.mapPin,
                       iconBg: const Color(0xFFD1FAE5),
                       iconColor: const Color(0xFF059669),
-                      value: _formatNumber(_totalPeopleAffected),
-                      label: 'People Affected',
+                      value: _formatNumber(_totalDistrictsReported),
+                      label: 'Districts',
                     ),
                   ),
                 ],
@@ -393,10 +382,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                                     reportLocation: reportLocation,
                                     exposureSite: exposureSite,
                                     foodSource: foodSource,
-                                    affectedPeople:
-                                        report['number_of_people_affected']
-                                            as int? ??
-                                        0,
                                   ),
                                 );
                               },
@@ -785,7 +770,6 @@ class ReportCard extends StatelessWidget {
   final String reportLocation;
   final String exposureSite;
   final String foodSource;
-  final int affectedPeople;
   final VoidCallback? onDetailsTap;
 
   const ReportCard({
@@ -798,7 +782,6 @@ class ReportCard extends StatelessWidget {
     required this.reportLocation,
     required this.exposureSite,
     required this.foodSource,
-    required this.affectedPeople,
     this.onDetailsTap,
   });
 
@@ -1115,66 +1098,6 @@ class ReportCard extends StatelessWidget {
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.orange.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Footer
-                Container(
-                  padding: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.shade100),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              LucideIcons.users,
-                              size: 16,
-                              color: Colors.grey.shade500,
-                            ),
-                            const SizedBox(width: 8),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '$affectedPeople',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade900,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: affectedPeople == 1
-                                        ? ' person'
-                                        : ' people',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
                                     ),
                                   ),
                                 ],

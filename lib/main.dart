@@ -8,8 +8,8 @@ import '../screens/forgotpassword_screen.dart';
 import 'services/location_service.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   await Database.connect();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MainApp());
   await LocationService.getUserAddress();
 }

@@ -291,7 +291,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
             Positioned(
               top: -24.sp,
-              child: GestureDetector(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(36),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ReportFormScreen()),

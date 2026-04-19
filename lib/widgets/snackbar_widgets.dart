@@ -13,7 +13,11 @@ class SnackbarWidgets {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(
+          bottom: 30,
+          left: 16,
+          right: 16,
+        ),
         padding: EdgeInsets.zero,
         backgroundColor: Colors.transparent,
         elevation: 0,
