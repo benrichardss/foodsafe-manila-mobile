@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:foodsafe_manila/screens/alerts_screen.dart';
-import 'package:foodsafe_manila/screens/analytics_screen.dart';
+import 'package:foodsafe_manila/screens/insights_screen.dart';
 import 'package:foodsafe_manila/screens/report_history_screen.dart';
 import 'package:foodsafe_manila/screens/report_form_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../screens/predict_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
 import '../services/session.dart';

@@ -109,7 +109,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     }
   }
 
-  static const Duration reportCooldown = Duration(hours: 12);
+  static const Duration reportCooldown = Duration(hours: 8);
 
   Duration? _remainingCooldown;
   Timer? _cooldownTimer;
