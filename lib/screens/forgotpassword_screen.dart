@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodsafe_manila/services/session.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../database/db.dart';
+import '../services/api_service.dart';
 import '../services/otp_service.dart';
 import '../widgets/snackbar_widgets.dart';
 
@@ -108,7 +108,7 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-    
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
@@ -116,7 +116,7 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
     try {
       String phone = _phoneCtrl.text.replaceAll(" ", "");
 
-      bool success = await Database.updatePassword(
+      bool success = await ApiService.updatePassword(
         phone: phone,
         newPassword: _newPassCtrl.text,
       );
@@ -141,13 +141,11 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
       if (!_formKey.currentState!.validate()) return;
 
       String phone = _phoneCtrl.text.replaceAll(" ", "");
-      var existingUser = await Database.userCollection!.findOne({
-        'phone_number': phone,
-      });
+      final exists = await ApiService.checkPhoneExists(phone);
 
       if (!mounted) return;
 
-      if (existingUser == null) {
+      if (!exists) {
         SnackbarWidgets.error(context, "Invalid phone number");
         return;
       }
@@ -210,7 +208,7 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                                 LucideIcons.chevronLeft,
                                 color: Colors.white70,
                               ),
-                              SizedBox(width: 4,),
+                              SizedBox(width: 4),
                               Text(
                                 "Back",
                                 style: GoogleFonts.inter(color: Colors.white70),
@@ -220,9 +218,7 @@ class _ForgotScreenState extends State<ForgotPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Image.asset(
-                        'assets/foodsafe_logo.png',
-                      ),
+                      Image.asset('assets/foodsafe_logo.png'),
                     ],
                   ),
                 ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mongo_dart/mongo_dart.dart' hide State, Center;
-import '../database/db.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../services/api_service.dart';
 import '../services/session.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
@@ -81,16 +80,14 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   int get _totalSymptoms {
     int total = 0;
     for (var report in _reports) {
-      final symptoms = report['symptoms'] as String?;
-      if (symptoms != null && symptoms.isNotEmpty) {
-        total += symptoms.split(',').length;
+      final symptomsValue = report['symptoms'];
+      if (symptomsValue is String && symptomsValue.isNotEmpty) {
+        total += symptomsValue.split(',').length;
+      } else if (symptomsValue is List) {
+        total += symptomsValue.length;
       }
     }
     return total;
-  }
-
-  String formatReportId(DateTime dateTime) {
-    return 'RPT-${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   String _formatDate(DateTime dateTime) {
@@ -133,17 +130,17 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       return;
     }
 
-    final userId = Session.currentUser!['_id'] as ObjectId?;
+    final userId = Session.currentUser!['_id'] as String?;
     if (userId == null) {
       setState(() => _isLoading = false);
       return;
     }
 
-    final reports = await Database.getUserReports(userId);
+    final reports = await ApiService.getUserReports(userId);
 
     reports.sort((a, b) {
-      final aDate = a['reported_at'] as DateTime?;
-      final bDate = b['reported_at'] as DateTime?;
+      final aDate = DateTime.tryParse(a['reported_at'] as String? ?? '');
+      final bDate = DateTime.tryParse(b['reported_at'] as String? ?? '');
 
       if (aDate == null || bDate == null) return 0;
       return bDate.compareTo(aDate); // descending
@@ -293,7 +290,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 4,
                           color: Colors.blue,
                         ),
                       )
@@ -339,38 +336,61 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
                                 final report = _paginatedReports[index];
 
-                                final reportedAtUtc =
-                                    report['reported_at'] as DateTime?;
+                                final reportedAtValue = report['reported_at'];
+                                final reportedAtUtc = reportedAtValue is String
+                                    ? DateTime.tryParse(reportedAtValue)
+                                    : reportedAtValue is DateTime
+                                    ? reportedAtValue
+                                    : null;
                                 final reportedAt = reportedAtUtc?.toLocal();
-                                final symptomsString =
-                                    report['symptoms'] as String? ?? '';
 
-                                final symptomsList = symptomsString
-                                    .split(',')
-                                    .map((s) => s.trim())
-                                    .where((s) => s.isNotEmpty)
-                                    .toList();
+                                final symptomsValue = report['symptoms'];
+                                final symptomsList = <String>[];
+                                if (symptomsValue is String) {
+                                  symptomsList.addAll(
+                                    symptomsValue
+                                        .split(',')
+                                        .map((s) => s.trim())
+                                        .where((s) => s.isNotEmpty),
+                                  );
+                                } else if (symptomsValue is List) {
+                                  symptomsList.addAll(
+                                    symptomsValue
+                                        .map((item) => item?.toString().trim())
+                                        .where((s) => s != null && s.isNotEmpty)
+                                        .cast<String>(),
+                                  );
+                                }
 
+                                final location =
+                                    report['location'] as Map<String, dynamic>?;
                                 final reportLocation =
-                                    report['report_location'] as String? ??
+                                    report['report_location'].split(',').first.trim() as String? ??
+                                    location?['district'] as String? ??
+                                    location?['name'].split(',').first.trim() as String? ??
                                     'Unknown';
+
+                                final reportBarangay =
+                                    location?['barangay'] as String?;
 
                                 final exposureSite =
-                                    (report['food_location'] as String?)
-                                        ?.trim() ??
+                                    (report['food_location'].split(',').first.trim() as String?) ??
+                                    report['exposureDistrict'] as String? ??
+                                    location?['name'].split(',').first.trim() as String? ??
                                     'Unknown';
 
+                                final exposureBarangay =
+                                    report['exposureBarangay'] as String? ??
+                                    location?['barangay'] as String?;
+
                                 final foodSource =
-                                    (report['food_source'] as String?)
-                                        ?.trim() ??
+                                    (report['food_source'] as String?) ??
+                                    (report['foodSource'] as String?) ??
                                     'Unknown';
 
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: ReportCard(
-                                    reportId: reportedAt != null
-                                        ? formatReportId(reportedAt)
-                                        : 'Unknown',
                                     status: 'Reviewed',
                                     date: reportedAt != null
                                         ? _formatDate(reportedAt)
@@ -380,7 +400,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                                         : 'Unknown',
                                     symptoms: symptomsList,
                                     reportLocation: reportLocation,
+                                    reportBarangay: reportBarangay,
                                     exposureSite: exposureSite,
+                                    exposureBarangay: exposureBarangay,
                                     foodSource: foodSource,
                                   ),
                                 );
@@ -410,7 +432,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -762,25 +783,27 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 }
 
 class ReportCard extends StatelessWidget {
-  final String reportId;
   final String status;
   final String date;
   final String time;
   final List<String> symptoms;
   final String reportLocation;
+  final String? reportBarangay;
   final String exposureSite;
+  final String? exposureBarangay;
   final String foodSource;
   final VoidCallback? onDetailsTap;
 
   const ReportCard({
     super.key,
-    required this.reportId,
     required this.status,
     required this.date,
     required this.time,
     required this.symptoms,
     required this.reportLocation,
+    this.reportBarangay,
     required this.exposureSite,
+    this.exposureBarangay,
     required this.foodSource,
     this.onDetailsTap,
   });
@@ -806,7 +829,6 @@ class ReportCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -819,43 +841,11 @@ class ReportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(height: 4, color: statusColor),
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          reportId,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
                 // Date and Time
                 Container(
                   padding: const EdgeInsets.only(bottom: 12),

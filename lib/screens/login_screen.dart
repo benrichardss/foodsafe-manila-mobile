@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../widgets/snackbar_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../database/db.dart';
+import '../services/api_service.dart';
 import '../services/session.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,12 +37,13 @@ class _LogInScreenState extends State<LoginScreen> {
       String phone = _phoneCtrl.text.replaceAll(" ", "");
       String password = _passCtrl.text;
 
-      var user = await Database.login(phone, password);
+      var user = await ApiService.login(phone, password);
 
       if (!mounted) return;
 
       if (user != null) {
-        Session.currentUser = user;
+        await Session.saveCurrentUser(user);
+        if (!mounted) return;
         SnackbarWidgets.success(context, "Login successful");
 
         Navigator.pushReplacementNamed(context, '/dashboard');
@@ -74,11 +75,7 @@ class _LogInScreenState extends State<LoginScreen> {
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 64, 16, 24),
                   child: Column(
-                    children: [
-                      Image.asset(
-                        'assets/foodsafe_logo.png',
-                      ),
-                    ],
+                    children: [Image.asset('assets/foodsafe_logo.png')],
                   ),
                 ),
                 // White sheet (but still in SAME scroll)
@@ -124,7 +121,9 @@ class _LogInScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.inter(),
                                 decoration: InputDecoration(
                                   hintText: "Enter phone number",
-                                  hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+                                  hintStyle: GoogleFonts.inter(
+                                    color: Color(0xFFD1D5DB),
+                                  ),
                                   prefixIcon: Icon(LucideIcons.phone),
                                 ),
                                 validator: (v) {
@@ -162,7 +161,9 @@ class _LogInScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.inter(),
                                 decoration: InputDecoration(
                                   hintText: "Enter password",
-                                  hintStyle: GoogleFonts.inter(color: Color(0xFFD1D5DB)),
+                                  hintStyle: GoogleFonts.inter(
+                                    color: Color(0xFFD1D5DB),
+                                  ),
                                   prefixIcon: const Icon(LucideIcons.lock),
                                   suffixIcon: IconButton(
                                     onPressed: () =>
@@ -187,7 +188,6 @@ class _LogInScreenState extends State<LoginScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pushNamed(

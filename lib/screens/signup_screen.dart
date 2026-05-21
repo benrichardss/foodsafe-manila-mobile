@@ -1,11 +1,11 @@
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../services/otp_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodsafe_manila/widgets/snackbar_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../database/db.dart';
+import '../services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -127,7 +127,7 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       String phone = _phoneCtrl.text.replaceAll(" ", "");
 
-      bool success = await Database.registerUser(
+      bool success = await ApiService.registerUser(
         username: _usernameCtrl.text.trim(),
         phone: phone,
         password: _passCtrl.text,
@@ -153,13 +153,11 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!_formKey.currentState!.validate()) return;
 
       String phone = _phoneCtrl.text.replaceAll(" ", "");
-      var existingUser = await Database.userCollection!.findOne({
-        'phone_number': phone,
-      });
+      final exists = await ApiService.checkPhoneExists(phone);
 
       if (!mounted) return;
 
-      if (existingUser != null) {
+      if (exists) {
         SnackbarWidgets.error(context, "Phone number already registered");
         return;
       }
@@ -215,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 LucideIcons.chevronLeft,
                                 color: Colors.white70,
                               ),
-                              SizedBox(width: 4,),
+                              SizedBox(width: 4),
                               Text(
                                 "Back",
                                 style: GoogleFonts.inter(color: Colors.white70),
@@ -225,9 +223,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Image.asset(
-                        'assets/foodsafe_logo.png',
-                      ),
+                      Image.asset('assets/foodsafe_logo.png'),
                     ],
                   ),
                 ),
@@ -384,7 +380,7 @@ class _SignupScreenState extends State<SignupScreen> {
               }
               return null;
             },
-            
+
             style: GoogleFonts.inter(),
             decoration: InputDecoration(
               hintText: "Enter phone number",

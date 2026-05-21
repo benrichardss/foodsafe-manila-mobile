@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'dart:convert';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -15,6 +17,106 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   bool isLoading = true;
+
+  List<Polygon> districtPolygons = [];
+
+  Color getDistrictColor(int district) {
+    switch (district) {
+      case 1:
+        return Colors.red;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.green;
+      case 4:
+        return Colors.orange;
+      case 5:
+        return Colors.purple;
+      default:
+        return Colors.teal;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadDistricts();
+  }
+
+  Future<void> loadDistricts() async {
+    final geoJsonString = await rootBundle.loadString(
+      'assets/manila-barangays-with-legislative-districts.json',
+    );
+
+    final data = jsonDecode(geoJsonString);
+
+    List<Polygon> polygons = [];
+
+    for (var feature in data['features']) {
+      try {
+        final properties = feature['properties'];
+
+        // directly use values from new JSON
+        final int? brgyNumber = properties['barangayNo'];
+        final String districtName = properties['district'] ?? '';
+
+        if (brgyNumber == null) continue;
+
+        // extract district number from "District 1"
+        final district = int.tryParse(
+          districtName.replaceAll(RegExp(r'[^0-9]'), ''),
+        );
+
+        final color = getDistrictColor(district ?? 1);
+
+        final geometry = feature['geometry'];
+
+        if (geometry['type'] == 'Polygon') {
+          final coordinates = geometry['coordinates'][0];
+
+          final points = coordinates.map<LatLng>((coord) {
+            return LatLng(coord[1].toDouble(), coord[0].toDouble());
+          }).toList();
+
+          polygons.add(
+            Polygon(
+              points: points,
+              color: color.withValues(alpha: 0.15),
+              borderColor: color,
+              borderStrokeWidth: 1.5,
+            ),
+          );
+        }
+
+        // optional: support MultiPolygon too
+        else if (geometry['type'] == 'MultiPolygon') {
+          for (var polygonCoords in geometry['coordinates']) {
+            final coordinates = polygonCoords[0];
+
+            final points = coordinates.map<LatLng>((coord) {
+              return LatLng(coord[1].toDouble(), coord[0].toDouble());
+            }).toList();
+
+            polygons.add(
+              Polygon(
+                points: points,
+                color: color.withValues(alpha: 0.15),
+                borderColor: color,
+                borderStrokeWidth: 1.5,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parsing polygon: $e');
+      }
+    }
+
+    setState(() {
+      districtPolygons = polygons;
+      isLoading = false;
+    });
+  }
 
   final List<RiskLocation> riskLocations = [
     RiskLocation(
@@ -149,7 +251,7 @@ class _MapScreenState extends State<MapScreen> {
                       radius: 18,
                       backgroundColor: lighten(location.color),
                       child: Icon(
-                        LucideIcons.alertTriangle,
+                        LucideIcons.triangleAlert,
                         color: location.color,
                         size: 20,
                       ),
@@ -251,73 +353,81 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: true,
       child: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: LatLng(14.5995, 120.9842),
-              initialZoom: 14,
-              maxZoom: 20,
-              cameraConstraint: CameraConstraint.contain(
-                bounds: LatLngBounds(
-                  LatLng(14.50, 120.93), // bottom-left of Manila
-                  LatLng(14.72, 121.05), // top-right of Manila
-                ),
-              ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.foodsafe_manila',
-              ),
-              MarkerLayer(
-                markers: riskLocations.map((location) {
-                  final size = markerSizeForCases(location.numOfCases);
-                  return Marker(
-                    child: InkWell(
-                      onTap: () {
-                        _showLocationCard(location);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: location.color.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
+          isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 4,
+                    color: Colors.blue,
+                  )
+                )
+              : FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: LatLng(14.5995, 120.9842),
+                  initialZoom: 14,
+                  maxZoom: 20,
+                  cameraConstraint: CameraConstraint.contain(
+                    bounds: LatLngBounds(
+                      LatLng(14.50, 120.93), // bottom-left of Manila
+                      LatLng(14.72, 121.05), // top-right of Manila
                     ),
-                    alignment: Alignment.center,
-                    width: size,
-                    height: size,
-                    point: location.position,
-                  );
-                }).toList(),
-              ),
-              CurrentLocationLayer(
-                style: const LocationMarkerStyle(
-                  marker: DefaultLocationMarker(),
-                  markerSize: Size(20, 20),
-                  markerDirection: MarkerDirection.heading,
+                  ),
                 ),
-              ),
-              RichAttributionWidget(
-                attributions: [
-                  TextSourceAttribution(
-                    'OpenStreetMap contributors',
-                    onTap: () =>
-                        (Uri.parse('https://openstreetmap.org/copyright')),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.foodsafe_manila',
+                  ),
+                  PolygonLayer(
+                    polygons: districtPolygons,
+                  ),
+                  MarkerLayer(
+                    markers: riskLocations.map((location) {
+                      final size = markerSizeForCases(location.numOfCases);
+                      return Marker(
+                        child: InkWell(
+                          onTap: () {
+                            _showLocationCard(location);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: location.color.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(40),
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        width: size,
+                        height: size,
+                        point: location.position,
+                      );
+                    }).toList(),
+                  ),
+                  CurrentLocationLayer(
+                    style: const LocationMarkerStyle(
+                      marker: DefaultLocationMarker(),
+                      markerSize: Size(20, 20),
+                      markerDirection: MarkerDirection.heading,
+                    ),
+                  ),
+                  RichAttributionWidget(
+                    attributions: [
+                      TextSourceAttribution(
+                        'OpenStreetMap contributors',
+                        onTap: () =>
+                            (Uri.parse('https://openstreetmap.org/copyright')),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
 
           Positioned(
             left: 16,

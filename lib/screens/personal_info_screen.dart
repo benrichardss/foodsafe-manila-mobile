@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../database/db.dart';
+import '../services/api_service.dart';
 import '../services/session.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -19,6 +19,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
 
   bool _loading = false;
   bool _updated = false;
@@ -27,6 +28,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 
@@ -37,6 +39,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     if (user != null) {
       _nameCtrl.text = user!['username'] ?? '';
       _phoneCtrl.text = user!['phone_number'] ?? '';
+      _emailCtrl.text = user!['email'] ?? '';
     }
   }
 
@@ -50,18 +53,20 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     try {
       if (user == null) return;
 
-      bool success = await Database.updateUser(
-        id: user!['_id'], // IMPORTANT
+      final updatedUser = await ApiService.updateUser(
+        id: user!['_id'] as String,
         username: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
+        email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       );
 
       if (!mounted) return;
 
-      if (success) {
-        // update session data too (VERY IMPORTANT)
-        user!['username'] = _nameCtrl.text.trim();
-        user!['phone_number'] = _phoneCtrl.text.trim();
+      if (updatedUser != null) {
+        Session.currentUser = updatedUser;
+        _nameCtrl.text = updatedUser['username'] ?? '';
+        _phoneCtrl.text = updatedUser['phone_number'] ?? '';
+        _emailCtrl.text = updatedUser['email'] ?? '';
         _updated = true;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,7 +169,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _InputField(
-                              label: "Name *",
+                              label: "Name",
                               child: TextFormField(
                                 controller: _nameCtrl,
                                 validator: _required,
@@ -191,7 +196,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                             ),
                             const SizedBox(height: 16),
                             _InputField(
-                              label: "Phone Number *",
+                              label: "Phone Number",
                               child: TextFormField(
                                 controller: _phoneCtrl,
                                 validator: _required,
@@ -217,13 +222,31 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                                 ),
                               ),
                             ),
-
-                            const SizedBox(height: 8),
-                            Text(
-                              "We'll send important alerts to this number",
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: Colors.grey,
+                            const SizedBox(height: 16),
+                            _InputField(
+                              label: "Email",
+                              child: TextFormField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                style: GoogleFonts.inter(),
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    LucideIcons.mail,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                  ),
+                                  hintText: 'Add a recovery email',
+                                  hintStyle: GoogleFonts.inter(
+                                    color: Color(0xFFD1D5DB),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                               ),
                             ),
 

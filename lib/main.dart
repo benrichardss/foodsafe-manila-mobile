@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:foodsafe_manila/database/db.dart';
 import 'screens/bottom_nav_bar_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/forgotpassword_screen.dart';
 import 'services/location_service.dart';
+import 'services/session.dart';
 
 Future<void> main() async {
-  await Database.connect();
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MainApp());
-  await LocationService.getUserAddress();
+  await Session.initialize();
+  runApp(
+    MainApp(
+      initialRoute: Session.currentUser != null ? '/dashboard' : '/login',
+    ),
+  );
+  await LocationService.preloadLocation();
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final String initialRoute;
+
+  const MainApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +29,7 @@ class MainApp extends StatelessWidget {
       builder: (context, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          initialRoute: '/login',
+          initialRoute: initialRoute,
           routes: {
             '/login': (context) => const LoginScreen(),
             '/signup': (context) => const SignupScreen(),

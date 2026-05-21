@@ -1,10 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../data/mock_analytics_data.dart';
-import '../widgets/analytics_widgets.dart' as analytics_widgets;
-import '../widgets/predict_widgets.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../services/api_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -16,17 +14,162 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool showStatistics = true;
   bool showOfficial = true;
-  String selectedTime = "Last 7 Days";
 
-  String? selectedDistrict;
+  /// Prediction chart filters
+  String predictionDistrict = 'all';
+  String predictionRange = '3';
 
-  Color get statisticsThemeColor =>
-      showOfficial ? const Color(0xFF059669) : const Color(0xFFEA580C);
+  /// Case Trends filters
+  String trendsYear = DateTime.now().year.toString();
+  String trendsClassification = 'all';
 
-  Color get statisticsThemeSurfaceColor =>
-      showOfficial ? const Color(0xFFDCFCE7) : const Color(0xFFFFEDD5);
+  /// District chart filters
+  String districtMonth = DateTime.now().month.toString();
+  String districtYear = DateTime.now().year.toString();
+  String districtClassification = 'all';
 
-  final data = MockAnalyticsData.getData(analytics_widgets.TimeRange.week);
+  /// Disease chart filters
+  String diseaseMonth = DateTime.now().month.toString();
+  String diseaseYear = DateTime.now().year.toString();
+  String diseaseClassification = 'all';
+
+  final List<String> districtItems = [
+    'all',
+    'district 1',
+    'district 2',
+    'district 3',
+    'district 4',
+    'district 5',
+    'district 6',
+  ];
+
+  final List<String> rangeItems = [
+    '3',
+    '6',
+    '12'
+  ];
+
+  final List<String> monthItems = [
+    'all',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+  ];
+  final List<String> yearItems = ['all', '2023', '2024', '2025', '2026'];
+  final List<String> caseClassificationItems = [
+    'all',
+    'confirmed',
+    'suspected',
+    'probable',
+  ];
+
+  Map<String, dynamic>? overviewData;
+  Map<String, dynamic>? trendsData;
+  Map<String, dynamic>? districtData;
+  Map<String, dynamic>? diseaseData;
+
+  bool isOverviewLoading = true;
+  bool isPredictLoading = true;
+  bool isTrendsLoading = true;
+  bool isDistrictLoading = true;
+  bool isDiseaseLoading = true;
+
+  double getNiceInterval(double max) {
+    if (max <= 10) return 2;
+    if (max <= 25) return 5;
+    if (max <= 50) return 10;
+    if (max <= 75) return 15;
+    if (max <= 100) return 20;
+    if (max <= 250) return 50;
+    if (max <= 500) return 100;
+    if (max <= 750) return 150;
+    if (max <= 1000) return 200;
+    return (max / 5).ceilToDouble();
+  }
+
+  double getNiceMaxY(double maxValue) {
+    final interval = getNiceInterval(maxValue);
+    return (maxValue / interval).ceil() * interval;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadAllAnalytics();
+  }
+
+  Future<void> loadAllAnalytics() async {
+    await Future.wait([
+      fetchOverview(),
+      fetchTrends(),
+      fetchDistrict(),
+      fetchDisease(),
+    ]);
+  }
+
+  Future<void> fetchOverview() async {
+    setState(() => isOverviewLoading = true);
+
+    final result = await ApiService.getOfficialAnalytics();
+
+    setState(() {
+      overviewData = result;
+      isOverviewLoading = false;
+    });
+  }
+
+  Future<void> fetchTrends() async {
+    setState(() => isTrendsLoading = true);
+
+    final result = await ApiService.getOfficialAnalytics(
+      year: trendsYear,
+      caseClassification: trendsClassification,
+    );
+
+    setState(() {
+      trendsData = result;
+      isTrendsLoading = false;
+    });
+  }
+
+  Future<void> fetchDistrict() async {
+    setState(() => isDistrictLoading = true);
+
+    final result = await ApiService.getOfficialAnalytics(
+      month: districtMonth,
+      year: districtYear,
+      caseClassification: districtClassification,
+    );
+
+    setState(() {
+      districtData = result;
+      isDistrictLoading = false;
+    });
+  }
+
+  Future<void> fetchDisease() async {
+    setState(() => isDiseaseLoading = true);
+
+    final result = await ApiService.getOfficialAnalytics(
+      month: diseaseMonth,
+      year: diseaseYear,
+      caseClassification: diseaseClassification,
+    );
+
+    setState(() {
+      diseaseData = result;
+      isDiseaseLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,19 +205,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ],
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(54),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: segmentedToggle(
-              color: Color(0xFF2563EB),
-              leftLabel: 'Statistics',
-              rightLabel: 'Forecast',
-              isLeftSelected: showStatistics,
-              onChanged: (v) => setState(() => showStatistics = v),
-            ),
-          ),
-        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -88,138 +218,88 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget statisticsView() {
-    final themeColor = statisticsThemeColor;
+    final growth = overviewData?['growth'];
+
+    final growthValue = double.tryParse(growth.toString()) ?? 0.0;
+
+    final growthText =
+        "${growthValue >= 0 ? '+' : ''}${growthValue.toStringAsFixed(1)}%";
+
+    Color growthColor = growthValue >= 0
+        ? const Color(0xFF059669) // green
+        : const Color(0xFFDC2626); // red
+
     return Column(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        /// KPI CARDS
+        Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    LucideIcons.layers,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "Filters",
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              'Data Source',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF374151),
+            Expanded(
+              child: _statCard(
+                bgColor: Colors.white,
+                textColor: Colors.black,
+                icon: LucideIcons.activity,
+                title: "Total Cases",
+                value: overviewData?['totalCases']?.toString() ?? '0',
               ),
             ),
-            const SizedBox(height: 8),
-            segmentedToggle(
-              color: themeColor,
-              leftIcon: LucideIcons.fileText,
-              rightIcon: LucideIcons.shield,
-              leftLabel: 'Official',
-              rightLabel: 'Reports',
-              isLeftSelected: showOfficial,
-              onChanged: (v) => setState(() => showOfficial = v),
-            ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              'Time Period',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF374151),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  timeButton("Last 7 Days"),
-                  timeButton("This Month"),
-                  timeButton("This Year"),
-                  timeButton("3 Years"),
-                ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                bgColor: Colors.white,
+                textColor: Colors.black,
+                icon: LucideIcons.mapPin,
+                title: "Top District",
+                subtitle: 'Highest case volume',
+                value: overviewData?['topDistrict'] ?? 'N/A',
               ),
             ),
           ],
         ),
-        SizedBox(height: 16),
-        chartCard(
-          accentColor: themeColor,
-          headingIcon: LucideIcons.mapPin,
-          heading: 'Cases by District',
-          subheading: 'Geographic distribution',
-          chart: barChart(themeColor),
-          footerIcon: Icons.my_location,
-          footerHeading: 'Hotspot Analysis',
-          footerContent:
-              "Tondo has the highest cases (245). Total across all districts: 889.",
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                bgColor: Colors.white,
+                textColor: Colors.black,
+                icon: LucideIcons.triangleAlert,
+                title: "Growth",
+                subtitle: 'vs last year',
+                value: growthText,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                bgColor: Colors.white,
+                textColor: Colors.black,
+                icon: LucideIcons.stethoscope,
+                title: "Top Disease",
+                subtitle: 'Most frequent diagnosis',
+                value: overviewData?['topDisease'] ?? 'N/A',
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: 16),
-        chartCard(
-          accentColor: themeColor,
-          headingIcon: LucideIcons.activity,
-          heading: 'Case Trends',
-          subheading: 'Temporal patterns',
-          enableDropdown: true,
-          chart: lineChart(
-            labels: [
-              "Week 1 Days 1-7",
-              "Week 2 Days 8-14",
-              "Week 3 Days 15-21",
-              "Week 4 Days 22-28",
-            ],
-            minY: 0,
-            maxY: 280,
-            data: const [
-              FlSpot(0, 142),
-              FlSpot(1, 165),
-              FlSpot(2, 158),
-              FlSpot(3, 178),
-            ],
-            accentColor: themeColor,
-          ),
-          footerIcon: LucideIcons.trendingUp,
-          footerHeading: 'Trend Analysis',
-          footerContent:
-              "Cases are increasing by 12.7% compared to the previous period. Current: 178 cases.",
-        ),
-        SizedBox(height: 16),
-        chartCard(
-          accentColor: themeColor,
-          headingIcon: LucideIcons.layers,
-          heading: 'Symptoms Distribution',
-          subheading: 'Category breakdown',
-          enableDropdown: true,
-          chart: pieChart(),
-          footerIcon: LucideIcons.users,
-          footerHeading: 'Top symptom',
-          footerContent:
-              "Diarrhea is the most reported symptom (23.6%). Total symptom reports: 1321.",
-        ),
+
+        const SizedBox(height: 16),
+
+        predictionChart(),
+
+        const SizedBox(height: 16),
+
+        caseTrendsChart(),
+
+        const SizedBox(height: 16),
+
+        casesByDistrictChart(),
+
+        const SizedBox(height: 16),
+
+        diseaseDistributionChart(),
       ],
     );
   }
@@ -279,8 +359,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-
-            dropdownButton(),
           ],
         ),
 
@@ -312,29 +390,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
 
         const SizedBox(height: 20),
-
-        _forecastChart(
-          labels: [
-            "Week 1 Days 1-7",
-            "Week 2 Days 8-14",
-            "Week 3 Days 15-21",
-            "Week 4 Days 22-28",
-          ],
-          minY: 50,
-          maxY: 70,
-          upperBoundData: const [
-            FlSpot(0, 60),
-            FlSpot(1, 55),
-            FlSpot(2, 58),
-            FlSpot(3, 62),
-          ],
-          lowerBoundData: const [
-            FlSpot(0, 65),
-            FlSpot(1, 60),
-            FlSpot(2, 63),
-            FlSpot(3, 66),
-          ],
-        ),
 
         const SizedBox(height: 20),
 
@@ -518,845 +573,1162 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget timeButton(String text) {
-    final bool isActive = selectedTime == text;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTime = text;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? statisticsThemeColor : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(8),
-          border: isActive ? null : Border.all(color: const Color(0xFFD1D5DB)),
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : const Color(0xFF374151),
+  Widget chartLoading() {
+    return SizedBox(
+      height: 180,
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: Colors.blue,
           ),
         ),
       ),
     );
   }
 
-  Widget dropdownButton() {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
-      ),
-      child: DropdownMenu<String>(
-        initialSelection: 'All Districts',
-        onSelected: (value) {
-          setState(() {
-            selectedDistrict = value;
-          });
-        },
-
-        width: double.infinity,
-
-        hintText: 'Choose district...',
-
-        leadingIcon: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Icon(LucideIcons.mapPin, size: 20),
-        ),
-
-        trailingIcon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-
-        textStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
-        ),
-
-        menuStyle: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(Colors.white),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        ),
-
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ),
-
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-          ),
-
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-          ),
-
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-          ),
-        ),
-
-        dropdownMenuEntries:
-            [
-              'All Districts',
-              'Tondo',
-              'Binondo',
-              'Sampaloc',
-              'Santa Cruz',
-              'San Miguel',
-              'Quiapo',
-            ].map((district) {
-              return DropdownMenuEntry(
-                value: district,
-                label: district,
-                labelWidget: Text(
-                  district,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
-      ),
-    );
-  }
-
-  Widget chartCard({
-    required Color accentColor,
-    required IconData headingIcon,
-    required String heading,
-    required String subheading,
-    bool enableDropdown = false,
+  Widget emptyChartWrapper({
     required Widget chart,
-    required IconData footerIcon,
-    required String footerHeading,
-    required String footerContent,
+    required bool isEmpty,
+    String message = 'No data for selected filters',
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// HEADER
-          Row(
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(height: 180, child: chart),
+
+        if (isEmpty)
+          Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(headingIcon, color: Colors.white, size: 18),
+              Icon(
+                LucideIcons.databaseZap,
+                size: 20,
+                color: Colors.grey.shade400,
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    heading,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  Text(
-                    subheading,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 6),
+              Text(
+                message,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                ),
               ),
             ],
           ),
-
-          const SizedBox(height: 20),
-
-          enableDropdown
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Location",
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    dropdownButton(),
-
-                    const SizedBox(height: 20),
-                  ],
-                )
-              : SizedBox.shrink(),
-
-          /// CHART
-          chart,
-
-          const SizedBox(height: 20),
-
-          /// FOOTER INSIGHT
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.13),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: accentColor.withOpacity(0.35)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(footerIcon, size: 16, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        footerHeading,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        footerContent,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget barChart(Color accentColor) {
-    final districts = [
-      "Tondo",
-      "Binondo",
-      "Sta. Cruz",
-      "Sampaloc",
-      "San Miguel",
-      "Malate",
-    ];
-
-    final values = [245.0, 180.0, 130.0, 110.0, 80.0, 55.0];
-
-    return Container(
-      height: 240,
-      padding: EdgeInsets.fromLTRB(12, 0, 18, 0),
-      child: BarChart(
-        BarChartData(
-          maxY: 260,
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: 65,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withOpacity(0.15),
-              strokeWidth: 1,
-              dashArray: [4, 4],
-            ),
-          ),
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              left: BorderSide(color: Colors.grey.shade400),
-              bottom: BorderSide(color: Colors.grey.shade400),
-            ),
-          ),
-          titlesData: FlTitlesData(
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-
-            /// Y AXIS
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                interval: 65,
-                getTitlesWidget: (value, _) {
-                  return Padding(
-                    padding: EdgeInsetsGeometry.only(right: 6),
-                    child: Text(
-                      value.toInt().toString(),
-                      textAlign: TextAlign.end,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            /// X AXIS
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 44,
-                getTitlesWidget: (value, meta) {
-                  int index = value.toInt();
-                  if (index >= districts.length) return const SizedBox();
-
-                  return Transform.rotate(
-                    angle: -0.6,
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Text(
-                        districts[index],
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          barGroups: List.generate(districts.length, (index) {
-            return BarChartGroupData(
-              x: index,
-              barRods: [
-                BarChartRodData(
-                  toY: values[index],
-                  width: 32,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(8),
-                  ),
-                  color: accentColor,
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  Widget lineChart({
-    required List<FlSpot> data,
-    required List<String> labels,
-    double minY = 0,
-    double maxY = 100,
-    required Color accentColor,
-  }) {
-    LineChartBarData line(List<FlSpot> data, Color color) {
-      return LineChartBarData(
-        spots: data,
-        isCurved: true,
-        curveSmoothness: 0.35,
-        color: color.withOpacity(0.9),
-        barWidth: 3,
-        isStrokeCapRound: true,
-        dotData: FlDotData(show: true),
-      );
-    }
-
-    return Container(
-      height: 240,
-      padding: EdgeInsets.fromLTRB(12, 0, 18, 0),
-      child: LineChart(
-        LineChartData(
-          minY: minY,
-          maxY: maxY,
-
-          /// GRID
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withOpacity(0.15),
-              strokeWidth: 1,
-              dashArray: [4, 4],
-            ),
-          ),
-
-          /// BORDER
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              left: BorderSide(color: Colors.grey.shade400),
-              bottom: BorderSide(color: Colors.grey.shade400),
-            ),
-          ),
-
-          /// TITLES
-          titlesData: FlTitlesData(
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-
-            /// X AXIS
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                reservedSize: 44,
-                getTitlesWidget: (value, _) {
-                  final index = value.toInt();
-
-                  if (index >= 0 && index < labels.length) {
-                    final label = labels[index]; // "Week 1 (1-7)"
-
-                    // Split into: "Week 1" and "(1-7)"
-                    final main = label.substring(0, label.indexOf('D')).trim();
-                    final sub = label.substring(label.indexOf('D'));
-
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "$main\n",
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            TextSpan(
-                              text: sub,
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  return const SizedBox();
-                },
-              ),
-            ),
-
-            /// Y AXIS
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                interval: (maxY - minY) / 4,
-                getTitlesWidget: (value, _) {
-                  return Padding(
-                    padding: EdgeInsetsGeometry.only(right: 6),
-                    child: Text(
-                      value.toInt().toString(),
-                      textAlign: TextAlign.end,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          /// TOUCH
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              tooltipBorderRadius: BorderRadius.circular(8),
-              getTooltipItems: (spots) {
-                return spots.map((spot) {
-                  return LineTooltipItem(
-                    spot.y.toStringAsFixed(1),
-                    GoogleFonts.inter(color: Colors.white),
-                  );
-                }).toList();
-              },
-            ),
-          ),
-
-          /// DATA
-          lineBarsData: [line(data, accentColor)],
-        ),
-      ),
-    );
-  }
-
-  Widget pieChart() {
-    final symptoms = [
-      {
-        'label': 'Vomiting',
-        'value': 245,
-        'percent': 19,
-        'color': const Color(0xFFEF4444),
-      },
-      {
-        'label': 'Diarrhea',
-        'value': 312,
-        'percent': 24,
-        'color': const Color(0xFFF97316),
-      },
-      {
-        'label': 'Nausea',
-        'value': 198,
-        'percent': 15,
-        'color': const Color(0xFFF59E0B),
-      },
-      {
-        'label': 'Fever',
-        'value': 156,
-        'percent': 12,
-        'color': const Color(0xFF8B5CF6),
-      },
-      {
-        'label': 'Stomach Pain',
-        'value': 189,
-        'percent': 14,
-        'color': const Color(0xFF3B82F6),
-      },
-      {
-        'label': 'Headache',
-        'value': 123,
-        'percent': 9,
-        'color': const Color(0xFF06B6D4),
-      },
-      {
-        'label': 'Weakness',
-        'value': 98,
-        'percent': 7,
-        'color': const Color(0xFF10B981),
-      },
-    ];
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 240,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 0,
-              sections: symptoms.map((item) {
-                return PieChartSectionData(
-                  value: (item['value'] as int).toDouble(),
-                  color: item['color'] as Color,
-                  title: '${item['percent']}%',
-                  radius: 95,
-                  titleStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  titlePositionPercentageOffset: 0.7,
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-
-        Wrap(
-          spacing: 14,
-          runSpacing: 8,
-          children: symptoms.map((item) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: item['color'] as Color,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '${item['label']} ',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '(${item['value']})',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-
-        SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _forecastChart({
-    required List<FlSpot> upperBoundData,
-    required List<FlSpot> lowerBoundData,
-    required List<String> labels,
-    double minY = 0,
-    double maxY = 100,
-  }) {
-    LineChartBarData line(List<FlSpot> data, Color color) {
+  Widget noDataCard({String? chartType}) {
+    IconData? icon;
+
+    switch (chartType) {
+      case 'line':
+        icon = LucideIcons.chartSpline;
+      case 'bar':
+        icon = LucideIcons.chartColumnBig;
+      case 'pie':
+        icon = LucideIcons.chartPie;
+      default:
+        icon = Icons.insert_chart_outlined;
+    }
+
+    return Container(
+      height: 180,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 40, color: Colors.grey.shade400),
+          const SizedBox(height: 8),
+          Text(
+            'No data available',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget predictionChart() {
+    double minY = 0;
+
+    final trend = trendsData?['trendData'] as List<dynamic>? ?? [];
+
+    final bool isAllYears = trendsYear == 'all';
+    final currentYear = DateTime.now().year;
+    final currentMonth = DateTime.now().month;
+
+    List<double> values = [];
+    List<String> labels = [];
+
+    if (isAllYears) {
+      for (final item in trend) {
+        values.add((item['total'] as num).toDouble());
+        labels.add(item['_id'].toString()); // year label
+      }
+    } else {
+      int maxMonth = 12;
+
+      if (int.parse(trendsYear) == currentYear) {
+        maxMonth = currentMonth; // only available months
+      }
+
+      values = List<double>.filled(maxMonth, 0);
+
+      for (final item in trend) {
+        final month = item['_id'] as int;
+        final total = (item['total'] as num).toDouble();
+
+        if (month <= maxMonth) {
+          values[month - 1] = total;
+        }
+      }
+
+      labels = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].sublist(0, maxMonth);
+    }
+
+    List<FlSpot> getTrendSpots() {
+      return List.generate(
+        values.length,
+        (index) => FlSpot(index.toDouble(), values[index]),
+      );
+    }
+
+    double getTrendMaxY() {
+      if (trend.isEmpty) return 100;
+
+      final max = values.isEmpty ? 100 : values.reduce((a, b) => a > b ? a : b);
+
+      return getNiceMaxY(max.toDouble());
+    }
+
+    final maxY = getTrendMaxY();
+    final interval = getNiceInterval(maxY);
+
+    LineChartBarData line(List<FlSpot> data) {
       return LineChartBarData(
         spots: data,
         isCurved: true,
         curveSmoothness: 0.35,
-        color: color.withOpacity(0.9),
+        color: Colors.blue.withValues(alpha: 0.9),
         barWidth: 3,
         isStrokeCapRound: true,
         dotData: FlDotData(show: true),
       );
     }
 
-    Widget legendItem(Color color, String label) {
-      return Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 10, color: color)),
-        ],
-      );
-    }
-
     return Container(
-      height: 300,
-      padding: EdgeInsets.fromLTRB(24, 36, 36, 24),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// 🔹 Chart
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                minY: minY,
-                maxY: maxY,
-
-                /// GRID
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.grey.withOpacity(0.15),
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
+          /// Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.trendingUpDown,
+                      size: 12,
+                      color: Colors.white,
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Predictions',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'District',
+                  value: predictionDistrict,
+                  items: districtItems,
+                  onChanged: (value) {
+                    setState(() => predictionDistrict = value!);
+                    fetchTrends();
+                  },
                 ),
-
-                /// BORDER
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(color: Colors.grey.shade400),
-                    bottom: BorderSide(color: Colors.grey.shade400),
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Time Range',
+                  value: predictionRange,
+                  items: rangeItems,
+                  onChanged: (value) {
+                    setState(() => predictionRange = value!);
+                    fetchTrends();
+                  },
                 ),
+              ),
+            ],
+          ),
 
-                /// TITLES
-                titlesData: FlTitlesData(
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+          const SizedBox(height: 24),
 
-                  /// X AXIS
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      reservedSize: 44,
-                      getTitlesWidget: (value, _) {
-                        final index = value.toInt();
+          /// Chart
+          isTrendsLoading
+              ? chartLoading()
+              : Container(
+                  height: 180,
+                  padding: const EdgeInsets.only(right: 26),
+                  child: LineChart(
+                    LineChartData(
+                      minY: minY,
+                      maxY: values.every((e) => e == 0) ? 10 : maxY,
 
-                        if (index >= 0 && index < labels.length) {
-                          final label = labels[index]; // "Week 1 (1-7)"
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Colors.grey.withValues(alpha: 0.15),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                      ),
 
-                          // Split into: "Week 1" and "(1-7)"
-                          final main = label
-                              .substring(0, label.indexOf('D'))
-                              .trim();
-                          final sub = label.substring(label.indexOf('D'));
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border(
+                          left: BorderSide(color: Colors.grey.shade400),
+                          bottom: BorderSide(color: Colors.grey.shade400),
+                        ),
+                      ),
 
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: RichText(
-                              textAlign: TextAlign.center,
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: "$main\n",
+                      titlesData: FlTitlesData(
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 1,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, _) {
+                              final index = value.toInt();
+
+                              if (index >= 0 && index < labels.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    labels[index],
                                     style: GoogleFonts.inter(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: sub,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 9,
                                       color: Colors.grey,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
+                                );
+                              }
 
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-
-                  /// Y AXIS
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      interval: (maxY - minY) / 4,
-                      getTitlesWidget: (value, _) {
-                        return Padding(
-                          padding: EdgeInsetsGeometry.only(right: 6),
-                          child: Text(
-                            value.toInt().toString(),
-                            textAlign: TextAlign.end,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              color: Colors.grey,
-                            ),
+                              return const SizedBox();
+                            },
                           ),
-                        );
-                      },
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 26,
+                            interval: interval,
+                            getTitlesWidget: (value, _) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Text(
+                                  value.toInt().toString(),
+                                  textAlign: TextAlign.end,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      lineBarsData: [
+                        line(getTrendSpots()),
+                        line(getTrendSpots()),
+                      ],
                     ),
                   ),
                 ),
-
-                /// TOUCH
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    tooltipBorderRadius: BorderRadius.circular(8),
-                    getTooltipItems: (spots) {
-                      return spots.map((spot) {
-                        return LineTooltipItem(
-                          spot.y.toStringAsFixed(1),
-                          GoogleFonts.inter(color: Colors.white),
-                        );
-                      }).toList();
-                    },
-                  ),
+          if (!isTrendsLoading) ...[
+            SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
+                    Text(
+                      'Actual',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
-
-                /// DATA
-                lineBarsData: [
-                  line(upperBoundData, Colors.green),
-                  line(lowerBoundData, Colors.orange),
-                ],
-              ),
+                Row(
+                  children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
+                    Text(
+                      'Prediction',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
+          ],
+        ],
+      ),
+    );
+  }
 
-          /// 🔹 Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              legendItem(Colors.green, "Upper bound"),
-              const SizedBox(width: 16),
-              legendItem(Colors.orange, "Lower bound"),
-            ],
+  Widget caseTrendsChart() {
+    double minY = 0;
+
+    final trend = trendsData?['trendData'] as List<dynamic>? ?? [];
+
+    final bool isAllYears = trendsYear == 'all';
+    final currentYear = DateTime.now().year;
+    final currentMonth = DateTime.now().month;
+
+    List<double> values = [];
+    List<String> labels = [];
+
+    if (isAllYears) {
+      for (final item in trend) {
+        values.add((item['total'] as num).toDouble());
+        labels.add(item['_id'].toString()); // year label
+      }
+    } else {
+      int maxMonth = 12;
+
+      if (int.parse(trendsYear) == currentYear) {
+        maxMonth = currentMonth; // only available months
+      }
+
+      values = List<double>.filled(maxMonth, 0);
+
+      for (final item in trend) {
+        final month = item['_id'] as int;
+        final total = (item['total'] as num).toDouble();
+
+        if (month <= maxMonth) {
+          values[month - 1] = total;
+        }
+      }
+
+      labels = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].sublist(0, maxMonth);
+    }
+
+    List<FlSpot> getTrendSpots() {
+      return List.generate(
+        values.length,
+        (index) => FlSpot(index.toDouble(), values[index]),
+      );
+    }
+
+    double getTrendMaxY() {
+      if (trend.isEmpty) return 100;
+
+      final max = values.isEmpty ? 100 : values.reduce((a, b) => a > b ? a : b);
+
+      return getNiceMaxY(max.toDouble());
+    }
+
+    final maxY = getTrendMaxY();
+    final interval = getNiceInterval(maxY);
+
+    LineChartBarData line(List<FlSpot> data) {
+      return LineChartBarData(
+        spots: data,
+        isCurved: true,
+        curveSmoothness: 0.35,
+        color: Colors.blue.withValues(alpha: 0.9),
+        barWidth: 3,
+        isStrokeCapRound: true,
+        dotData: FlDotData(show: true),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Column(
+        children: [
+          /// Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.activity,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Case Trends',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Year',
+                  value: trendsYear,
+                  items: yearItems,
+                  onChanged: (value) {
+                    setState(() => trendsYear = value!);
+                    fetchTrends();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Classification',
+                  value: trendsClassification,
+                  items: caseClassificationItems,
+                  onChanged: (value) {
+                    setState(() => trendsClassification = value!);
+                    fetchTrends();
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          /// Chart
+          isTrendsLoading
+              ? chartLoading()
+              : Container(
+                  height: 180,
+                  padding: const EdgeInsets.only(right: 26),
+                  child: LineChart(
+                    LineChartData(
+                      minY: minY,
+                      maxY: values.every((e) => e == 0) ? 10 : maxY,
+
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Colors.grey.withValues(alpha: 0.15),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                      ),
+
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border(
+                          left: BorderSide(color: Colors.grey.shade400),
+                          bottom: BorderSide(color: Colors.grey.shade400),
+                        ),
+                      ),
+
+                      titlesData: FlTitlesData(
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 1,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, _) {
+                              final index = value.toInt();
+
+                              if (index >= 0 && index < labels.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    labels[index],
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return const SizedBox();
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 26,
+                            interval: interval,
+                            getTitlesWidget: (value, _) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Text(
+                                  value.toInt().toString(),
+                                  textAlign: TextAlign.end,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      lineBarsData: [line(getTrendSpots())],
+                    ),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget casesByDistrictChart() {
+    final district = districtData?['districtData'] as List<dynamic>? ?? [];
+
+    final districts = [
+      'District 1',
+      'District 2',
+      'District 3',
+      'District 4',
+      'District 5',
+      'District 6',
+    ];
+
+    final Map<String, double> districtMap = {
+      for (var item in district)
+        item['_id'].toString(): (item['total'] as num).toDouble(),
+    };
+
+    final values = districts
+        .map((districtName) => districtMap[districtName] ?? 0.0)
+        .toList();
+
+    final maxValue = values.isEmpty
+        ? 100
+        : values.reduce((a, b) => a > b ? a : b);
+
+    final maxY = getNiceMaxY(maxValue.toDouble());
+
+    final interval = getNiceInterval(maxValue.toDouble());
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          /// Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.mapPin,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Cases by District',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Month',
+                  value: districtMonth,
+                  items: monthItems,
+                  onChanged: (value) {
+                    setState(() => districtMonth = value!);
+                    fetchDistrict();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Year',
+                  value: districtYear,
+                  items: yearItems,
+                  onChanged: (value) {
+                    setState(() => districtYear = value!);
+                    fetchDistrict();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Classification',
+                  value: districtClassification,
+                  items: caseClassificationItems,
+                  onChanged: (value) {
+                    setState(() => districtClassification = value!);
+                    fetchDistrict();
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          /// Chart
+          isDistrictLoading
+              ? chartLoading()
+              : Container(
+                  height: 180,
+                  padding: const EdgeInsets.only(right: 26),
+                  child: BarChart(
+                    BarChartData(
+                      maxY: maxY,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: interval,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Colors.grey.withValues(alpha: 0.15),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border(
+                          left: BorderSide(color: Colors.grey.shade400),
+                          bottom: BorderSide(color: Colors.grey.shade400),
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+
+                        /// Y AXIS
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 26,
+                            interval: interval,
+                            getTitlesWidget: (value, _) {
+                              return Padding(
+                                padding: EdgeInsetsGeometry.only(right: 6),
+                                child: Text(
+                                  value.toInt().toString(),
+                                  textAlign: TextAlign.end,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        /// X AXIS
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 44,
+                            getTitlesWidget: (value, meta) {
+                              int index = value.toInt();
+                              if (index >= districts.length) {
+                                return const SizedBox();
+                              }
+
+                              return Transform.rotate(
+                                angle: -0.6,
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: Text(
+                                    districts[index],
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      barGroups: List.generate(districts.length, (index) {
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: values[index],
+                              width: 32,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(8),
+                              ),
+                              color: Colors.blue,
+                            ),
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget diseaseDistributionChart() {
+    final rawDiseases =
+        diseaseData?['diseaseDistribution'] as List<dynamic>? ?? [];
+
+    final totalCases = rawDiseases.fold<double>(
+      0,
+      (sum, item) => sum + (item['total'] as num).toDouble(),
+    );
+
+    final colors = [
+      Colors.red,
+      Colors.orange,
+      Colors.amber,
+      Colors.purple,
+      Colors.blue,
+      Colors.cyan,
+      Colors.green,
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          /// Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.layers,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Disease Distribution',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Month',
+                  value: diseaseMonth,
+                  items: monthItems,
+                  onChanged: (value) {
+                    setState(() => diseaseMonth = value!);
+                    fetchDisease();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Year',
+                  value: diseaseYear,
+                  items: yearItems,
+                  onChanged: (value) {
+                    setState(() => diseaseYear = value!);
+                    fetchDisease();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Classification',
+                  value: diseaseClassification,
+                  items: caseClassificationItems,
+                  onChanged: (value) {
+                    setState(() => diseaseClassification = value!);
+                    fetchDisease();
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 24),
+
+          /// Chart
+          isDiseaseLoading
+              ? chartLoading()
+              : SizedBox(
+                  height: 180,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 0,
+                      sections: rawDiseases.isEmpty
+                          ? [
+                              PieChartSectionData(
+                                value: 1,
+                                color: Colors.grey.shade200,
+                                title: '',
+                                radius: 80,
+                              ),
+                            ]
+                          : List.generate(rawDiseases.length, (index) {
+                              final item = rawDiseases[index];
+                              final value = (item['total'] as num).toDouble();
+
+                              final percent = totalCases == 0
+                                  ? 0
+                                  : ((value / totalCases) * 100).round();
+
+                              return PieChartSectionData(
+                                value: value,
+                                color: colors[index % colors.length],
+                                title: '$percent%',
+                                radius: 80,
+                                titleStyle: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              );
+                            }),
+                    ),
+                  ),
+                ),
+
+          if (!isDiseaseLoading && rawDiseases.isNotEmpty) ...[
+            SizedBox(height: 24),
+            Wrap(
+              spacing: 14,
+              runSpacing: 8,
+              children: List.generate(rawDiseases.length, (index) {
+                final item = rawDiseases[index];
+
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: colors[index % colors.length],
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${item['_id']} ',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '(${item['total']})',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String formatDropdownText(String item, String label) {
+    const months = {
+      '1': 'Jan',
+      '2': 'Feb',
+      '3': 'Mar',
+      '4': 'Apr',
+      '5': 'May',
+      '6': 'Jun',
+      '7': 'Jul',
+      '8': 'Aug',
+      '9': 'Sep',
+      '10': 'Oct',
+      '11': 'Nov',
+      '12': 'Dec',
+    };
+
+    if (item == 'all') {
+      if (label == 'Month') return 'All';
+      if (label == 'Classification') return 'All';
+      if (label == 'Year') return 'All';
+      return 'All';
+    }
+    
+    if (label == 'Time Range') {
+      return '$item months';
+    }
+
+    if (months.containsKey(item)) {
+      return months[item]!;
+    }
+
+    return item[0].toUpperCase() + item.substring(1).toLowerCase();
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.black45,
+          ),
+        ),
+        SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: DropdownButton<String>(
+            isDense: true,
+            isExpanded: true,
+            value: value,
+            underline: const SizedBox(),
+            dropdownColor: Colors.white,
+            icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+            style: GoogleFonts.inter(fontSize: 12, color: Colors.black87),
+            items: items.map((item) {
+              return DropdownMenuItem(
+                value: item,
+                child: Text(formatDropdownText(item, label)),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1365,20 +1737,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     required Color textColor,
     required IconData icon,
     required String title,
+    String? subtitle,
     required String value,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: Colors.white70),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: textColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 12, color: textColor),
+              ),
               const SizedBox(width: 5),
               Text(
                 title,
@@ -1390,14 +1777,65 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: 26,
-              color: Colors.white,
+              fontSize: 18,
+              color: textColor,
               fontWeight: FontWeight.bold,
             ),
           ),
           Text(
-            "cases/week",
+            subtitle ?? '',
             style: GoogleFonts.inter(color: textColor, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget statOverviewCard({
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String value,
+    Color valueColor = const Color(0xFF111827),
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: valueColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),

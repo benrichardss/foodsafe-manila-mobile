@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:foodsafe_manila/screens/report_history_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mongo_dart/mongo_dart.dart' hide State, Center;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../widgets/snackbar_widgets.dart';
-import '../database/db.dart';
+import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/session.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -18,6 +19,7 @@ class ReportFormScreen extends StatefulWidget {
 }
 
 class _ReportFormScreenState extends State<ReportFormScreen> {
+  bool isLoading = false;
   int _currentStep = 0;
 
   Future<void> _nextStep() async {
@@ -40,6 +42,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   }
 
   Future<bool> _submit() async {
+    if (isLoading) return false;
+
+    setState(() => isLoading = true);
+
     try {
       // Check if user is logged in
       if (Session.currentUser == null) {
@@ -50,7 +56,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       }
 
       // Get the current user's ID
-      final userId = Session.currentUser!['_id'] as ObjectId?;
+      final userId = Session.currentUser!['_id'] as String?;
       if (userId == null) {
         if (context.mounted) {
           SnackbarWidgets.error(context, "User ID not found");
@@ -61,24 +67,56 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       final allowed = await _checkCooldown(userId);
       if (!allowed) return false;
 
-      // Convert symptoms set to comma-separated string
-      final reportedSymptoms = selectedSymptoms.join(', ');
+      final reportedSymptoms = selectedSymptoms.toList();
+      final currentDistrict = locationText.split(',').first.trim();
+      final coordinates = await LocationService.getCurrentCoordinates();
+
+      if (coordinates == null) {
+        if (mounted) {
+          SnackbarWidgets.error(context, "Unable to get current coordinates");
+        }
+        return false;
+      }
+
+      // Ensure coordinates are within Manila City boundaries
+      final lat = coordinates['lat'] ?? 0.0;
+      final lng = coordinates['lng'] ?? 0.0;
+
+      final insideManila = await _isWithinManila(lat, lng);
+
+      if (!insideManila) {
+        if (mounted) {
+          SnackbarWidgets.error(
+            context,
+            "Reports are only accepted within the City of Manila",
+          );
+        }
+        return false;
+      }
+
+      final locationPayload = {
+        'name': locationText,
+        'district': currentDistrict,
+        'barangay': null,
+        'barangayNo': null,
+        'coordinates': {'lat': lat, 'lng': lng},
+      };
+
+      final exposureDistrict =
+          selectedAteFoodLocation == 'Same as my current district location'
+          ? currentDistrict
+          : selectedAteFoodLocation == 'Choose a different district'
+          ? selectedDistrict ?? currentDistrict
+          : null;
 
       // Call the database submitReport method
-      final success = await Database.submitReport(
-        reportId:
-            'RPT-${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}${DateTime.now().day.toString().padLeft(2, '0')}',
+      final success = await ApiService.submitReport(
         reportedBy: userId,
         reportLocation: locationText.split(',').first.trim(),
         symptoms: reportedSymptoms,
         foodSource: selectedFoodSource ?? 'Not specified',
-        foodLocation: selectedAteFoodLocation == 'Same as my current location'
-            ? locationText.split(',').first.trim()
-            : selectedAteFoodLocation == 'Choose a different district'
-            ? selectedDistrict ?? locationText.split(',').first.trim()
-            : selectedAteFoodLocation == 'Not sure'
-            ? 'Not sure'
-            : locationText.split(',').first.trim(),
+        exposureDistrict: exposureDistrict,
+        location: locationPayload,
       );
 
       if (success) {
@@ -106,6 +144,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         SnackbarWidgets.error(context, "Error: $e");
       }
       return false;
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -117,8 +159,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   bool isCooldown = false;
   String timeLeft = "";
 
-  Future<bool> _checkCooldown(ObjectId userId) async {
-    final lastReportTime = await Database.getLastReportTime(userId);
+  Future<bool> _checkCooldown(String userId) async {
+    final lastReportTime = await ApiService.getLastReportTime(userId);
 
     if (lastReportTime == null) return true;
 
@@ -145,10 +187,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   Future<void> _initCooldown() async {
     if (Session.currentUser == null) return;
 
-    final userId = Session.currentUser!['_id'] as ObjectId?;
+    final userId = Session.currentUser!['_id'] as String?;
     if (userId == null) return;
 
-    final lastReportTime = await Database.getLastReportTime(userId);
+    final lastReportTime = await ApiService.getLastReportTime(userId);
 
     if (lastReportTime == null) return;
 
@@ -190,13 +232,95 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         });
       } else {
         setState(() {
-          _remainingCooldown =
-              Duration(seconds: _remainingCooldown!.inSeconds - 1);
+          _remainingCooldown = Duration(
+            seconds: _remainingCooldown!.inSeconds - 1,
+          );
 
           _updateTimeText();
         });
       }
     });
+  }
+
+  List<dynamic>? _manilaFeatures;
+
+  Future<bool> _isWithinManila(double lat, double lng) async {
+    try {
+      if (_manilaFeatures == null) {
+        final raw = await rootBundle.loadString(
+          'assets/manila-barangays-with-legislative-districts.json',
+        );
+
+        final data = json.decode(raw) as Map<String, dynamic>;
+        _manilaFeatures = data['features'] as List<dynamic>;
+      }
+
+      for (final feature in _manilaFeatures!) {
+        final geometry = feature['geometry'] as Map<String, dynamic>?;
+
+        if (geometry == null) continue;
+
+        final type = geometry['type'];
+        final coordinates = geometry['coordinates'];
+
+        if (type == 'Polygon') {
+          final polygonRings = coordinates as List<dynamic>;
+
+          for (final ring in polygonRings) {
+            final polygon = (ring as List).map<List<double>>((point) {
+              return [
+                (point[0] as num).toDouble(), // lng
+                (point[1] as num).toDouble(), // lat
+              ];
+            }).toList();
+
+            if (_pointInPolygon(lng, lat, polygon)) {
+              return true;
+            }
+          }
+        }
+
+        else if (type == 'MultiPolygon') {
+          final multiPolygons = coordinates as List<dynamic>;
+
+          for (final polygonGroup in multiPolygons) {
+            for (final ring in polygonGroup) {
+              final polygon = (ring as List).map<List<double>>((point) {
+                return [
+                  (point[0] as num).toDouble(),
+                  (point[1] as num).toDouble(),
+                ];
+              }).toList();
+
+              if (_pointInPolygon(lng, lat, polygon)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Manila boundary check error: $e');
+      return false;
+    }
+  }
+
+  // Ray-casting algorithm: point x/y against polygon [[x,y],...]
+  bool _pointInPolygon(double x, double y, List<List<double>> polygon) {
+    var inside = false;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      final xi = polygon[i][0], yi = polygon[i][1];
+      final xj = polygon[j][0], yj = polygon[j][1];
+
+      final intersect =
+          ((yi > y) != (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 0.0) + xi);
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
   }
 
   final List<String> symptoms = [
@@ -219,9 +343,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   ];
 
   final List<String> ateFoodLocations = [
-    'Same as my current location',
+    'Same as my current district location',
     'Choose a different district',
-    'Not sure',
   ];
 
   final Set<String> selectedSymptoms = {};
@@ -331,20 +454,32 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                   ? Container(
                                       padding: const EdgeInsets.all(12), // p-3
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFFBEB), // bg-amber-50
-                                        border: Border.all(color: const Color(0xFFFCD34D)), // border-amber-300
-                                        borderRadius: BorderRadius.circular(12), // rounded-xl
+                                        color: const Color(
+                                          0xFFFFFBEB,
+                                        ), // bg-amber-50
+                                        border: Border.all(
+                                          color: const Color(0xFFFCD34D),
+                                        ), // border-amber-300
+                                        borderRadius: BorderRadius.circular(
+                                          12,
+                                        ), // rounded-xl
                                       ),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           // Icon container
                                           Container(
                                             width: 32,
                                             height: 32,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF59E0B), // bg-amber-500
-                                              borderRadius: BorderRadius.circular(8), // rounded-lg
+                                              color: const Color(
+                                                0xFFF59E0B,
+                                              ), // bg-amber-500
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    8,
+                                                  ), // rounded-lg
                                             ),
                                             child: const Center(
                                               child: Icon(
@@ -356,38 +491,51 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                           ),
 
                                           const SizedBox(width: 12), // gap-3
-
                                           // Text content
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 RichText(
                                                   text: TextSpan(
                                                     style: GoogleFonts.inter(
                                                       fontSize: 12, // text-xs
-                                                      color: Color(0xFF78350F), // text-amber-900
+                                                      color: Color(
+                                                        0xFF78350F,
+                                                      ), // text-amber-900
                                                     ),
                                                     children: [
                                                       TextSpan(
-                                                        text: "Cooldown Active: ",
-                                                        style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                                                        text:
+                                                            "Cooldown Active: ",
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
                                                       ),
                                                       TextSpan(
-                                                        text: "Next report available in",
+                                                        text:
+                                                            "Next report available in",
                                                       ),
                                                     ],
                                                   ),
                                                 ),
 
-                                                const SizedBox(height: 2), // mb-0.5
+                                                const SizedBox(
+                                                  height: 2,
+                                                ), // mb-0.5
 
                                                 Text(
                                                   timeLeft, // e.g. "44s"
                                                   style: GoogleFonts.inter(
                                                     fontSize: 14, // text-sm
                                                     fontWeight: FontWeight.bold,
-                                                    color: Color(0xFFB45309), // text-amber-700
+                                                    color: Color(
+                                                      0xFFB45309,
+                                                    ), // text-amber-700
                                                   ),
                                                 ),
                                               ],
@@ -399,25 +547,39 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                   : Container(
                                       padding: const EdgeInsets.all(12), // p-3
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFEFF6FF), // bg-blue-50
+                                        color: const Color(
+                                          0xFFEFF6FF,
+                                        ), // bg-blue-50
                                         border: Border.all(
                                           color: const Color(0xFFBFDBFE),
                                         ), // border-blue-200
-                                        borderRadius: BorderRadius.circular(12), // rounded-xl
+                                        borderRadius: BorderRadius.circular(
+                                          12,
+                                        ), // rounded-xl
                                       ),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           // Icon container
                                           Container(
                                             width: 32,
                                             height: 32,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF2563EB), // bg-blue-600
-                                              borderRadius: BorderRadius.circular(8), // rounded-lg
+                                              color: const Color(
+                                                0xFF2563EB,
+                                              ), // bg-blue-600
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    8,
+                                                  ), // rounded-lg
                                             ),
                                             child: const Center(
-                                              child: Icon(LucideIcons.info, size: 16, color: Colors.white),
+                                              child: Icon(
+                                                LucideIcons.info,
+                                                size: 16,
+                                                color: Colors.white,
+                                              ),
                                             ),
                                           ),
 
@@ -428,12 +590,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                                               text: TextSpan(
                                                 style: GoogleFonts.inter(
                                                   fontSize: 12, // text-xs
-                                                  color: Color(0xFF1E40AF), // text-blue-800
+                                                  color: Color(
+                                                    0xFF1E40AF,
+                                                  ), // text-blue-800
                                                 ),
                                                 children: [
                                                   TextSpan(
                                                     text: "Note: ",
-                                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                                                    style: GoogleFonts.inter(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                   TextSpan(
                                                     text:
@@ -452,8 +619,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           )
                         : SizedBox.shrink(),
 
-                    buildStepContent()
-                  ]
+                    buildStepContent(),
+                  ],
                 ),
               ),
             ),
@@ -604,41 +771,11 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          decoration: InputDecoration(
-            hintText: 'Select source...',
-            hintStyle: GoogleFonts.inter(
-              fontSize: 14,
-              color: Color(0xFF9CA3AF),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
-            ),
-          ),
-          items: foodSources.map((source) {
-            return DropdownMenuItem(
-              value: source,
-              child: Text(source, style: GoogleFonts.inter(fontSize: 14)),
-            );
-          }).toList(),
-          onChanged: (value) {
+        dropdownButton(
+          initialSelection: selectedFoodSource,
+          hintText: 'Select source...',
+          dropdownMenuEntries: foodSources,
+          onSelected: (value) {
             setState(() {
               selectedFoodSource = value;
             });
@@ -821,56 +958,18 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            dropdownColor: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            decoration: InputDecoration(
-              hintText: 'Choose district...',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: Color(0xFF9CA3AF),
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2563EB),
-                  width: 2,
-                ),
-              ),
-            ),
-            initialValue: selectedDistrict,
-            items:
-                [
-                  'Tondo',
-                  'Binondo',
-                  'Sampaloc',
-                  'Santa Cruz',
-                  'San Miguel',
-                  'Quiapo',
-                ].map((district) {
-                  return DropdownMenuItem(
-                    value: district,
-                    child: Text(
-                      district,
-                      style: GoogleFonts.inter(fontSize: 14),
-                    ),
-                  );
-                }).toList(),
-            onChanged: (value) {
+          dropdownButton(
+            initialSelection: selectedDistrict,
+            hintText: 'Choose district...',
+            dropdownMenuEntries: [
+              "District 1",
+              "District 2",
+              "District 3",
+              "District 4",
+              "District 5",
+              "District 6",
+            ],
+            onSelected: (value) {
               setState(() {
                 selectedDistrict = value;
               });
@@ -1092,7 +1191,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
                       // Location
                       Text(
-                        "YOUR CURRENT LOCATION",
+                        "CURRENT DISTRICT LOCATION",
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: Colors.grey,
@@ -1148,14 +1247,12 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           SizedBox(width: 6),
                           Text(
                             selectedAteFoodLocation ==
-                                    'Same as my current location'
+                                    'Same as my current district location'
                                 ? locationText.split(',').first.trim()
                                 : selectedAteFoodLocation ==
                                       'Choose a different district'
                                 ? selectedDistrict ??
                                       locationText.split(',').first.trim()
-                                : selectedAteFoodLocation == 'Not sure'
-                                ? 'Not sure'
                                 : locationText.split(',').first.trim(),
                             style: GoogleFonts.inter(
                               fontWeight: FontWeight.w500,
@@ -1186,7 +1283,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                LucideIcons.alertTriangle,
+                LucideIcons.triangleAlert,
                 size: 18,
                 color: Color(0xFFD97706),
               ),
@@ -1212,89 +1309,108 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () async {
-                  final confirm = await showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: Text(
-                        "Submit report?",
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                      ),
-                      content: Text(
-                        "Are you sure you want to submit the report?",
-                        style: GoogleFonts.inter(),
-                      ),
-                      actions: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pop(context, false);
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  side: const BorderSide(
-                                    color: Color(0xFF2563EB),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: Text(
-                                  "Cancel",
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2563EB),
-                                  ),
-                                ),
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final confirm = await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: Text(
+                              "Submit report?",
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context, true);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2563EB),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: Text(
-                                  "Submit",
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                            content: Text(
+                              "Are you sure you want to submit the report?",
+                              style: GoogleFonts.inter(),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
+                            actions: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, false);
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        side: const BorderSide(
+                                          color: Color(0xFF2563EB),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "Cancel",
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF2563EB),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, true);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFF2563EB,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "Submit",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
 
-                  if (!context.mounted) return;
+                        if (!context.mounted) return;
 
-                  if (confirm == true) {
-                    _nextStep();
-                  }
-                },
+                        if (confirm == true) {
+                          _nextStep();
+                        }
+                      },
                 iconAlignment: IconAlignment.start,
-                icon: const Icon(Icons.send),
-                label: const Text('Confirm & Submit'),
+                icon: isLoading ? null : const Icon(Icons.send),
+                label: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Confirm & Submit'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   disabledBackgroundColor: const Color(0xFF87ABFB),
@@ -1365,7 +1481,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
           child: Center(
             child: Icon(
-              LucideIcons.checkCircle,
+              LucideIcons.circleCheckBig,
               color: Colors.green[600],
               size: 48,
             ),
@@ -1446,6 +1562,82 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget dropdownButton({
+    required String? initialSelection,
+    required String hintText,
+    required List<String> dropdownMenuEntries,
+    required ValueChanged<String?> onSelected,
+  }) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
+      child: DropdownMenu<String>(
+        initialSelection: initialSelection,
+        onSelected: onSelected,
+
+        width: double.infinity,
+
+        hintText: hintText,
+
+        trailingIcon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+
+        textStyle: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(Colors.white),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+          ),
+
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+          ),
+
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
+          ),
+        ),
+
+        dropdownMenuEntries: dropdownMenuEntries.map((entry) {
+          return DropdownMenuEntry(
+            value: entry,
+            label: entry,
+            labelWidget: Text(
+              entry,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }

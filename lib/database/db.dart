@@ -1,3 +1,4 @@
+/*
 import 'dart:developer';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'constant.dart';
@@ -45,6 +46,7 @@ class Database {
     required String username,
     required String phone,
     required String password,
+    String? email
   }) async {
     try {
       phone = phone.replaceAll(" ", "");
@@ -60,6 +62,7 @@ class Database {
         'username': username,
         'phone_number': phone,
         'password': password,
+        'email': email ?? '',
         'created_at': DateTime.now(),
       });
 
@@ -74,13 +77,22 @@ class Database {
     required ObjectId id,
     required String username,
     required String phone,
+    String? email,
   }) async {
     try {
       phone = phone.replaceAll(" ", "");
 
+      var modifier = modify
+          .set('username', username)
+          .set('phone_number', phone);
+
+      if (email != null) {
+        modifier = modifier.set('email', email);
+      }
+
       var result = await userCollection!.updateOne(
         where.id(id),
-        modify.set('username', username).set('phone_number', phone),
+        modifier,
       );
 
       return result.isSuccess;
@@ -169,3 +181,4 @@ class Database {
     }
   }
 }
+*/

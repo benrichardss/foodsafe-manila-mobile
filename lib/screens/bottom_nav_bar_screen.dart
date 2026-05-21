@@ -5,8 +5,7 @@ import 'package:foodsafe_manila/screens/insights_screen.dart';
 import 'package:foodsafe_manila/screens/report_history_screen.dart';
 import 'package:foodsafe_manila/screens/report_form_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../screens/predict_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
 import '../services/session.dart';
@@ -26,7 +25,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   @override
   Widget build(BuildContext context) {
-  final user = Session.currentUser;
+    final user = Session.currentUser;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.white,
@@ -197,7 +196,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     if (!context.mounted) return;
 
                     if (confirm == true) {
-                      Session.currentUser = null;
+                      await Session.clear();
+                      if (!context.mounted) return;
                       Navigator.pushReplacementNamed(context, '/login');
                     }
                   },
@@ -249,82 +249,88 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           });
         },
       ),
-      bottomNavigationBar: Container(
-        height: 64.sp,
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1))
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            Positioned(
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildBottomNavItem(
-                    icon: LucideIcons.home,
-                    label: 'Home',
-                    index: 0,
-                  ),
-                  _buildBottomNavItem(
-                    icon: LucideIcons.mapPin,
-                    label: 'Map',
-                    index: 1,
-                  ),
-                  _buildBottomNavItem(label: 'Report',),
-                  _buildBottomNavItem(
-                    icon: LucideIcons.barChart3,
-                    label: 'Analytics',
-                    index: 2,
-                  ),
-                  _buildBottomNavItem(
-                    icon: LucideIcons.bell,
-                    label: 'Alerts',
-                    index: 3,
-                  ),
-                ],
-              ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          height: 64.sp,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
-            Positioned(
-              top: -24.sp,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(36),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReportFormScreen()),
-                ),
-                child: Container(
-                  width: 58.sp,
-                  height: 58.sp,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildBottomNavItem(
+                      icon: LucideIcons.house,
+                      label: 'Home',
+                      index: 0,
                     ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 18,
-                        offset: Offset(0, 6),
+                    _buildBottomNavItem(
+                      icon: LucideIcons.mapPin,
+                      label: 'Map',
+                      index: 1,
+                    ),
+                    _buildBottomNavItem(label: 'Report'),
+                    _buildBottomNavItem(
+                      icon: LucideIcons.chartColumn,
+                      label: 'Analytics',
+                      index: 2,
+                    ),
+                    _buildBottomNavItem(
+                      icon: LucideIcons.bell,
+                      label: 'Alerts',
+                      index: 3,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                top: -24.sp,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(36),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ReportFormScreen(),
+                    ),
+                  ),
+                  child: Container(
+                    width: 58.sp,
+                    height: 58.sp,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.campaign,
-                      color: Colors.white,
-                      size: 28.sp,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 18,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.campaign,
+                        color: Colors.white,
+                        size: 28.sp,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -352,7 +358,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           if (icon != null)
             Icon(
               icon,
-              size: 24,
+              size: 22,
               color: isSelected ? Colors.blue : Colors.black45,
             )
           else
@@ -364,7 +370,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             label,
             style: GoogleFonts.inter(
               fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: isSelected ? Colors.blue : Colors.black45,
             ),
           ),
@@ -410,7 +416,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         child: InkWell(
           splashColor: const Color(0xFF2563EB).withValues(alpha: 0.15),
           highlightColor: Colors.black.withValues(alpha: 0.04),
-           onTap: () async {
+          onTap: () async {
             final updated = await Navigator.push<bool>(
               context,
               MaterialPageRoute(builder: (context) => page),
