@@ -105,6 +105,8 @@ class ApiService {
     required List<String> symptoms,
     required String foodSource,
     required String? exposureDistrict,
+    String? exposureBarangay,
+    int? exposureBarangayNo,
     required Map<String, dynamic> location,
   }) async {
     final uri = Uri.parse('$baseUrl/reports');
@@ -117,6 +119,9 @@ class ApiService {
         'symptoms': symptoms,
         'foodSource': foodSource,
         'exposureDistrict': exposureDistrict,
+        'exposureBarangay': exposureBarangay,
+        'exposureBarangayNo': exposureBarangayNo,
+        'caseClassification': 'suspected',
         'location': location,
       }),
     );
@@ -153,12 +158,14 @@ class ApiService {
     String? year,
     String? month,
     String? caseClassification,
+    bool includeReports = true,
   }) async {
     final query = {
       if (year != null && year != 'all') 'year': year,
       if (month != null && month != 'all') 'month': month,
       if (caseClassification != null && caseClassification != 'all')
         'caseClassification': caseClassification,
+      if (!includeReports) 'includeReports': 'false',
     };
 
     final uri = Uri.parse(
@@ -174,16 +181,73 @@ class ApiService {
     return null;
   }
 
-  static Future<Map<String, dynamic>> getPredictionChart({
-    String district = 'all',
-    String range = '3',
+  static Future<Map<String, dynamic>> fetchLatestPredictions({
+    String? token,
+    String? datasetId,
+    String? districtKey,
+    String? district,
   }) async {
+    final query = <String, String>{
+      if (datasetId != null) 'datasetId': datasetId,
+      if (districtKey != null) 'districtKey': districtKey,
+      if (district != null) 'district': district,
+    };
+
+    final uri = Uri.parse('$baseUrl/predictions')
+        .replace(queryParameters: query.isNotEmpty ? query : null);
+
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/api/predictions/chart?district=$district&range=$range',
-      ),
+      uri,
+      headers: {
+        ...headers,
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
     );
 
-    return jsonDecode(response.body);
+    final body = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(body['message'] ?? 'Prediction request failed');
+    }
+
+    return body as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>?> getDashboard() async {
+    final uri = Uri.parse('$baseUrl/dashboard');
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getRiskHeatmap({String months = '12'}) async {
+    final uri = Uri.parse('$baseUrl/risk/heatmap').replace(
+      queryParameters: {'months': months},
+    );
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getNearbyRisk({
+    int? barangayNo,
+    double? lat,
+    double? lng,
+  }) async {
+    final query = <String, String>{
+      if (barangayNo != null) 'barangayNo': '$barangayNo',
+      if (lat != null) 'lat': '$lat',
+      if (lng != null) 'lng': '$lng',
+    };
+    final uri = Uri.parse('$baseUrl/risk/nearby').replace(queryParameters: query);
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    return null;
   }
 }

@@ -1,18 +1,17 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart' as loc;
+import 'manila_geo_service.dart';
 
 class LocationService {
   static final loc.Location _location = loc.Location();
-
-  // Synchronous cached value
   static String? cachedAddress;
+  static ManilaLocation? cachedManilaLocation;
 
-  /// Preload location at app start
   static Future<void> preloadLocation() async {
+    await ManilaGeoService.ensureLoaded();
     cachedAddress = await getUserAddress();
   }
 
-  /// Handle permission + GPS service
   static Future<bool> _handlePermission() async {
     bool serviceEnabled;
     loc.PermissionStatus permissionGranted;
@@ -34,119 +33,95 @@ class LocationService {
     return true;
   }
 
-  /// Convert Manila area into District
-  static String getManilaDistrict(String area) {
-    area = area.toLowerCase();
+  static Future<ManilaLocation?> resolveManilaLocation({
+    bool forceRefresh = false,
+  }) async {
+    if (cachedManilaLocation != null && !forceRefresh) {
+      return cachedManilaLocation;
+    }
 
-    // First District
-    if (area.contains("tondo")) {
-      if (area.contains("north harbor")) {
-        return "First District – Tondo 1";
+    final hasPermission = await _handlePermission();
+    if (!hasPermission) return null;
+
+    try {
+      await ManilaGeoService.ensureLoaded();
+      final locData = await _location.getLocation();
+      if (locData.latitude == null || locData.longitude == null) return null;
+
+      String locality = '';
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          locData.latitude!,
+          locData.longitude!,
+        );
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          locality = place.subLocality?.trim().isNotEmpty == true
+              ? place.subLocality!.trim()
+              : (place.locality ?? place.subAdministrativeArea ?? '').trim();
+        }
+      } catch (_) {}
+
+      final resolved = ManilaGeoService.lookup(
+        locData.latitude!,
+        locData.longitude!,
+        localityName: locality,
+      );
+
+      cachedManilaLocation = resolved;
+      if (resolved != null) {
+        cachedAddress = resolved.formatted;
       }
-      return "Second District";
+      return resolved;
+    } catch (_) {
+      return null;
     }
-
-    // Third District
-    if (area.contains("san nicolas") ||
-        area.contains("binondo") ||
-        area.contains("quiapo") ||
-        area.contains("santa cruz") ||
-        area.contains("sta cruz")) {
-      return "Third District";
-    }
-
-    // Fourth District
-    if (area.contains("sampaloc")) {
-      return "Fourth District";
-    }
-
-    // Fifth District
-    if (area.contains("malate") ||
-        area.contains("ermita") ||
-        area.contains("intramuros") ||
-        area.contains("port area") ||
-        area.contains("south harbor") ||
-        area.contains("paco") ||
-        area.contains("san andres")) {
-      return "Fifth District";
-    }
-
-    // Sixth District
-    if (area.contains("pandacan") ||
-        area.contains("san miguel") ||
-        area.contains("sta. ana") ||
-        area.contains("santa ana") ||
-        area.contains("sta mesa") ||
-        area.contains("sta. mesa") ||
-        area.contains("santa mesa")) {
-      return "Sixth District";
-    }
-
-    return "Unknown District";
   }
 
-  /// Get location (async)
   static Future<String> getUserAddress({bool forceRefresh = false}) async {
     if (cachedAddress != null && !forceRefresh) return cachedAddress!;
 
     final hasPermission = await _handlePermission();
-    if (!hasPermission) return "Location permission denied";
+    if (!hasPermission) return 'Location unavailable';
 
     try {
       final locData = await _location.getLocation();
-
       if (locData.latitude == null || locData.longitude == null) {
-        return "Location unavailable";
+        return 'Location unavailable';
       }
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      // Try Manila structured first
+      final resolved = await resolveManilaLocation(forceRefresh: forceRefresh);
+      if (resolved != null) return resolved.formatted;
+
+      // ✅ Fallback: general geocoding (outside Manila)
+      final placemarks = await placemarkFromCoordinates(
         locData.latitude!,
         locData.longitude!,
       );
 
-      if (placemarks.isEmpty) return "Unknown location";
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
 
-      final place = placemarks.first;
+        final city = place.locality ?? place.subAdministrativeArea ?? 'Unknown City';
+        final area = place.subLocality ?? place.thoroughfare ?? 'Unknown Area';
 
-      String barangay = place.subLocality ?? "";
-      String area = place.locality ?? "";
-
-      // Some Manila locations appear in subAdministrativeArea
-      if (area.isEmpty) {
-        area = place.subAdministrativeArea ?? "";
+        // Fake a barangay-like label for consistency
+        return '$city, $area';
       }
 
-      String district = getManilaDistrict(area);
-
-      List<String> parts = [];
-
-      if (barangay.isNotEmpty) {
-        parts.add(barangay);
-      }
-
-      if (district != "Unknown District") {
-        parts.add(district);
-      } else if (area.isNotEmpty) {
-        parts.add(area);
-      }
-
-      String result = parts.join(", ");
-
-      cachedAddress = result;
-      return result;
-    } catch (e) {
-      return "Failed to get location";
+      return 'Unknown location';
+    } catch (_) {
+      return 'Location unavailable';
     }
   }
 
-  /// Get the current latitude/longitude as a map.
   static Future<Map<String, double>?> getCurrentCoordinates() async {
     final hasPermission = await _handlePermission();
     if (!hasPermission) return null;
 
     try {
       final locData = await _location.getLocation();
-
       if (locData.latitude == null || locData.longitude == null) {
         return null;
       }

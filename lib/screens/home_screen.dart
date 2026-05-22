@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import '../services/session.dart';
 import '../widgets/home_widgets.dart';
 
@@ -12,6 +13,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final user = Session.currentUser;
+  Map<String, dynamic>? dashboardData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboard();
+  }
+
+  Future<void> _loadDashboard() async {
+    final data = await ApiService.getDashboard();
+    if (!mounted) return;
+    setState(() {
+      dashboardData = data;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Transform.translate(
                   offset: const Offset(0, -20),
                   child: Column(
-                    children: const [
-                      DashboardSummaryCard(),
-                      SizedBox(height: 14),
-                      CurrentRiskCard(),
+                    children: [
+                      DashboardSummaryCard(
+                        data: dashboardData,
+                        isLoading: isLoading,
+                      ),
+                      const SizedBox(height: 14),
+                      CurrentRiskCard(
+                        data: dashboardData,
+                        isLoading: isLoading,
+                      ),
                     ],
                   ),
                 ),

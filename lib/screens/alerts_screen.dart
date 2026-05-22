@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../services/api_service.dart';
+import '../services/manila_geo_service.dart';
+import '../services/risk_alert_service.dart';
 import '../widgets/alerts_widgets.dart';
 
 class AlertsScreen extends StatefulWidget {
@@ -11,243 +13,216 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  int unreadCount = 2;
+  int unreadCount = 0;
   RiskLevel? selectedFilter;
   bool showFilterChips = false;
+  bool isLoading = true;
+  List<AlertItem> alerts = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadAlerts();
+    RiskAlertService.instance.latestMessage.addListener(_onRiskMessage);
+  }
 
-  final List<AlertItem> alerts = const [
-    AlertItem(
-      title: "Salmonella",
-      risk: RiskLevel.high,
-      message:
-          "Increased cases reported in the area. Avoid raw or undercooked food.",
-      location: "Tondo",
-      timeAgo: "2 hours ago",
-      cases: "45 cases reported",
-      distance: "0.5 km away",
-    ),
-    AlertItem(
-      title: "Food Poisoning",
-      risk: RiskLevel.moderate,
-      message:
-          "Food contamination suspected at local market. Practice food safety.",
-      location: "Binondo",
-      timeAgo: "5 hours ago",
-      cases: "12 cases reported",
-      distance: "1.2 km away",
-    ),
-    AlertItem(
-      title: "E. Coli",
-      risk: RiskLevel.low,
-      message:
-          "Monitor symptoms. Ensure clean drinking water and proper food handling.",
-      location: "Sampaloc",
-      timeAgo: "1 day ago",
-      cases: "3 cases reported",
-      distance: "2.8 km away",
-    ),
-    AlertItem(
-      title: "Campylobacter",
-      risk: RiskLevel.high,
-      message: "Linked to poultry products. Cook chicken thoroughly.",
-      location: "Sta. Cruz",
-      timeAgo: "1 day ago",
-      cases: "23 cases reported",
-      distance: "3.2 km away",
-    ),
-    AlertItem(
-      title: "Norovirus",
-      risk: RiskLevel.moderate,
-      message:
-          "Highly contagious. Wash hands frequently and avoid sharing utensils.",
-      location: "Quiapo",
-      timeAgo: "2 days ago",
-      cases: "8 cases reported",
-      distance: "1.8 km away",
-    ),
-    AlertItem(
-      title: "Listeria",
-      risk: RiskLevel.moderate,
-      message: "Linked to dairy products. Check refrigerator temperatures.",
-      location: "Ermita",
-      timeAgo: "3 days ago",
-      cases: "15 cases reported",
-      distance: "2.1 km away",
-    ),
-  ];
+  @override
+  void dispose() {
+    RiskAlertService.instance.latestMessage.removeListener(_onRiskMessage);
+    super.dispose();
+  }
+
+  void _onRiskMessage() {
+    _loadAlerts();
+  }
+
+  RiskLevel _levelFromString(String? level) {
+    switch (level) {
+      case 'high':
+        return RiskLevel.high;
+      case 'moderate':
+        return RiskLevel.moderate;
+      default:
+        return RiskLevel.low;
+    }
+  }
+
+  Future<void> _loadAlerts() async {
+    setState(() => isLoading = true);
+    final heatmap = await ApiService.getRiskHeatmap(months: '6');
+    final areas = (heatmap?['areas'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
+
+    final highAreas = areas
+        .where((a) => a['riskLevel'] == 'high')
+        .toList()
+      ..sort(
+        (a, b) => ((b['riskScore'] as num?) ?? 0)
+            .compareTo((a['riskScore'] as num?) ?? 0),
+      );
+
+    final built = highAreas.take(12).map((area) {
+      final district = area['district']?.toString() ?? '';
+      final barangay = area['barangay']?.toString() ?? '';
+      final barangayNo = (area['barangayNo'] as num?)?.toInt() ?? 0;
+      final location = ManilaGeoService.formatLocation(
+        district: district,
+        locality: barangay,
+        barangayNo: barangayNo,
+      );
+
+      return AlertItem(
+        title: 'Area Risk Alert',
+        risk: _levelFromString(area['riskLevel']?.toString()),
+        message:
+            'Elevated foodborne illness risk detected. Official: ${area['officialCases'] ?? 0}, Suspected: ${area['suspectedCases'] ?? 0}.',
+        location: location,
+        timeAgo: 'Live',
+        cases: '${area['totalCases'] ?? 0} total cases',
+        distance: 'Score ${area['riskScore'] ?? 0}',
+      );
+    }).toList();
+
+    final live = RiskAlertService.instance.latestMessage.value;
+    if (live != null) {
+      built.insert(
+        0,
+        AlertItem(
+          title: 'You are in a high-risk area',
+          risk: RiskLevel.high,
+          message: live,
+          location: 'Current GPS location',
+          timeAgo: 'Now',
+          cases: 'Active alert',
+          distance: 'Immediate',
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      alerts = built;
+      unreadCount = built.length;
+      isLoading = false;
+    });
+  }
+
+  List<AlertItem> get filteredAlerts {
+    if (selectedFilter == null) return alerts;
+    return alerts.where((a) => a.risk == selectedFilter).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filteredAlerts = selectedFilter == null
-        ? alerts
-        : alerts.where((a) => a.risk == selectedFilter).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        shape: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade300, // light gray border
-            width: 1,
-          ),
-        ),
-        surfaceTintColor: const Color(0xFFF9FAFB),
         backgroundColor: Colors.white,
-        toolbarHeight: 92, // stays constant
-        titleSpacing: 16,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              'Alerts & Notifications',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '$unreadCount unread notifications',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: const Color(0xFF4B5563),
-              ),
-            ),
-          ],
+        surfaceTintColor: Colors.white,
+        title: Text(
+          'Alerts',
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                setState(() {
-                  showFilterChips = !showFilterChips;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Icon(
-                  LucideIcons.listFilter,
-                  size: 20,
-                  color: Color(0xFF4B5563),
-                ),
-              ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(36), 
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                _filterChip('All', null),
+                const SizedBox(width: 8),
+                _filterChip('High', RiskLevel.high),
+                const SizedBox(width: 8),
+                _filterChip('Moderate', RiskLevel.moderate),
+                const SizedBox(width: 8),
+                _filterChip('Low', RiskLevel.low),
+              ],
             ),
           ),
-        ],
-        bottom: showFilterChips
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildChip("All", null),
-                          const SizedBox(width: 8),
-                          _buildChip("High Risk", RiskLevel.high),
-                          const SizedBox(width: 8),
-                          _buildChip("Moderate Risk", RiskLevel.moderate),
-                          const SizedBox(width: 8),
-                          _buildChip("Low Risk", RiskLevel.low),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : null,
+        ),
       ),
-      body: SafeArea(
-        top: true,
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              child: Column(
-                children: filteredAlerts.map((item) {
-                  final index = alerts.indexOf(item);
-                  final isUnread = index < unreadCount;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: AlertCard(
-                      item: item,
-                      isUnread: isUnread,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    Expanded(
+                      child: filteredAlerts.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No alerts available',
+                                style: GoogleFonts.inter(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filteredAlerts.length,
+                              itemBuilder: (context, index) {
+                                return AlertCard(item: filteredAlerts[index]);
+                              },
+                            ),
                     ),
-                  );
-                }).toList(),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 24,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
-                        elevation: 6,
-                      ),
-                      onPressed: unreadCount == 0
-                          ? null
-                          : () => setState(() => unreadCount = 0),
-                      child: Text(
-                        unreadCount == 0
-                            ? "All Read"
-                            : "Mark All as Read ($unreadCount)",
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                  ],
+                ),
+                if(unreadCount > 0)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 36,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            shape: const StadiumBorder(),
+                            elevation: 6,
+                          ),
+                          onPressed: () => setState(() => unreadCount = 0),
+                          child: Text(
+                            unreadCount == 0
+                                ? "All Read"
+                                : "Mark All as Read ($unreadCount)",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      )
+          )
     );
   }
 
-  ChoiceChip _buildChip(String label, RiskLevel? risk) {
-    final isSelected = selectedFilter == risk;
-    return ChoiceChip(
+  Widget _filterChip(String label, RiskLevel? level) {
+    final selected = selectedFilter == level;
+    return FilterChip(
       label: Text(
         label,
         style: GoogleFonts.inter(
-          color: isSelected ? Colors.white : Colors.black87,
+          color: selected ? Colors.white : Colors.black87,
           fontWeight: FontWeight.w500,
         ),
       ),
-      selected: isSelected,
+      selected: selected,
       selectedColor: const Color(0xFF2563EB),
       backgroundColor: const Color(0xFFF3F4F6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      onSelected: (_) {
-        setState(() {
-          selectedFilter = risk;
-        });
-      },
+      onSelected: (_) => setState(() => selectedFilter = level),
     );
   }
 }

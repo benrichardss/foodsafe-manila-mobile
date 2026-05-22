@@ -5,17 +5,23 @@ import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/forgotpassword_screen.dart';
 import 'services/location_service.dart';
+import 'services/notification_service.dart';
+import 'services/risk_alert_service.dart';
 import 'services/session.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Session.initialize();
+  await NotificationService.initialize();
+  await LocationService.preloadLocation();
+  if (Session.currentUser != null) {
+    RiskAlertService.instance.startMonitoring();
+  }
   runApp(
     MainApp(
       initialRoute: Session.currentUser != null ? '/dashboard' : '/login',
     ),
   );
-  await LocationService.preloadLocation();
 }
 
 class MainApp extends StatelessWidget {

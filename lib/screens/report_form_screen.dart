@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../widgets/snackbar_widgets.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
+import '../services/manila_geo_service.dart';
 import '../services/session.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
@@ -68,7 +69,6 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       if (!allowed) return false;
 
       final reportedSymptoms = selectedSymptoms.toList();
-      final currentDistrict = locationText.split(',').first.trim();
       final coordinates = await LocationService.getCurrentCoordinates();
 
       if (coordinates == null) {
@@ -94,28 +94,50 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         return false;
       }
 
+      await ManilaGeoService.ensureLoaded();
+      final resolved = LocationService.cachedManilaLocation ??
+          ManilaGeoService.lookup(lat, lng);
+      if (resolved == null) {
+        if (mounted) {
+          SnackbarWidgets.error(
+            context,
+            'Unable to resolve barangay within Manila',
+          );
+        }
+        return false;
+      }
+
       final locationPayload = {
-        'name': locationText,
-        'district': currentDistrict,
-        'barangay': null,
-        'barangayNo': null,
+        'name': resolved.formatted,
+        'district': resolved.district,
+        'barangay': resolved.barangay,
+        'barangayNo': resolved.barangayNo,
         'coordinates': {'lat': lat, 'lng': lng},
       };
 
-      final exposureDistrict =
-          selectedAteFoodLocation == 'Same as my current district location'
-          ? currentDistrict
-          : selectedAteFoodLocation == 'Choose a different district'
-          ? selectedDistrict ?? currentDistrict
-          : null;
+      String? exposureDistrict;
+      String? exposureBarangay;
+      int? exposureBarangayNo;
 
-      // Call the database submitReport method
+      if (selectedAteFoodLocation ==
+          'Same as my current district location') {
+        exposureDistrict = resolved.district;
+        exposureBarangay = resolved.barangay;
+        exposureBarangayNo = resolved.barangayNo;
+      } else if (selectedAteFoodLocation == 'Choose a different district') {
+        exposureDistrict = selectedDistrict;
+        exposureBarangay = selectedExposureBarangay;
+        exposureBarangayNo = selectedExposureBarangayNo;
+      }
+
       final success = await ApiService.submitReport(
         reportedBy: userId,
-        reportLocation: locationText.split(',').first.trim(),
+        reportLocation: resolved.formatted,
         symptoms: reportedSymptoms,
         foodSource: selectedFoodSource ?? 'Not specified',
         exposureDistrict: exposureDistrict,
+        exposureBarangay: exposureBarangay,
+        exposureBarangayNo: exposureBarangayNo,
         location: locationPayload,
       );
 
@@ -352,6 +374,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   int affectedPeople = 1;
   String? selectedFoodSource;
   String? selectedDistrict;
+  String? selectedExposureBarangay;
+  int? selectedExposureBarangayNo;
+  List<Map<String, dynamic>> exposureBarangayOptions = [];
 
   late String locationText;
 
@@ -359,17 +384,21 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   void initState() {
     super.initState();
     _loadHeader();
-    locationText = LocationService.cachedAddress ?? "Fetching...";
+    locationText = LocationService.cachedAddress ?? 'Fetching...';
 
-    // Optionally, refresh in background
-    LocationService.getUserAddress(forceRefresh: true).then((updated) {
-      if (mounted) {
-        setState(() {
-          locationText = updated;
-        });
-      }
+    LocationService.resolveManilaLocation(forceRefresh: true).then((resolved) {
+      if (!mounted || resolved == null) return;
+      setState(() {
+        locationText = resolved.formatted;
+      });
     });
     _initCooldown();
+  }
+
+  void _loadExposureBarangays(String district) {
+    exposureBarangayOptions = ManilaGeoService.barangaysForDistrict(district);
+    selectedExposureBarangay = null;
+    selectedExposureBarangayNo = null;
   }
 
   @override
@@ -972,6 +1001,26 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             onSelected: (value) {
               setState(() {
                 selectedDistrict = value;
+                if (value != null) _loadExposureBarangays(value);
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          dropdownButton(
+            initialSelection: selectedExposureBarangay,
+            hintText: 'Choose barangay...',
+            dropdownMenuEntries: exposureBarangayOptions
+                .map((b) => b['label'] as String)
+                .toList(),
+            onSelected: (value) {
+              final match = exposureBarangayOptions.cast<Map<String, dynamic>>().where(
+                (b) => b['label'] == value,
+              );
+              final selected = match.isNotEmpty ? match.first : null;
+              setState(() {
+                selectedExposureBarangay = value;
+                selectedExposureBarangayNo =
+                    selected?['barangayNo'] as int?;
               });
             },
           ),
@@ -987,7 +1036,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             onPressed:
                 (selectedAteFoodLocation == null ||
                     (selectedAteFoodLocation == 'Choose a different district' &&
-                        selectedDistrict == null))
+                        (selectedDistrict == null ||
+                            selectedExposureBarangayNo == null)))
                 ? null
                 : () {
                     _nextStep();
@@ -1246,14 +1296,11 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           ),
                           SizedBox(width: 6),
                           Text(
-                            selectedAteFoodLocation ==
-                                    'Same as my current district location'
+                            selectedAteFoodLocation == 'Same as my current district location'
                                 ? locationText.split(',').first.trim()
-                                : selectedAteFoodLocation ==
-                                      'Choose a different district'
-                                ? selectedDistrict ??
-                                      locationText.split(',').first.trim()
-                                : locationText.split(',').first.trim(),
+                                : selectedAteFoodLocation == 'Choose a different district'
+                                    ? '$selectedDistrict, Barangay $selectedExposureBarangayNo'
+                                    : locationText.split(',').first.trim(),
                             style: GoogleFonts.inter(
                               fontWeight: FontWeight.w500,
                               fontSize: 14,

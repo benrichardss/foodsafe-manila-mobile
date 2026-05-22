@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../services/api_service.dart';
+import '../services/manila_geo_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -35,12 +36,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   final List<String> districtItems = [
     'all',
-    'district 1',
-    'district 2',
-    'district 3',
-    'district 4',
-    'district 5',
-    'district 6',
+    'District 1',
+    'District 2',
+    'District 3',
+    'District 4',
+    'District 5',
+    'District 6',
   ];
 
   final List<String> rangeItems = [
@@ -73,12 +74,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   ];
 
   Map<String, dynamic>? overviewData;
+  Map<String, dynamic>? predictionData;
   Map<String, dynamic>? trendsData;
   Map<String, dynamic>? districtData;
   Map<String, dynamic>? diseaseData;
 
   bool isOverviewLoading = true;
-  bool isPredictLoading = true;
+  bool isPredictionLoading = true;
   bool isTrendsLoading = true;
   bool isDistrictLoading = true;
   bool isDiseaseLoading = true;
@@ -110,6 +112,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> loadAllAnalytics() async {
     await Future.wait([
       fetchOverview(),
+      fetchPredictions(),
       fetchTrends(),
       fetchDistrict(),
       fetchDisease(),
@@ -127,12 +130,249 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     });
   }
 
+  List<dynamic> _predictionSeries(Map<String, dynamic> district, List<String> keys) {
+    for (final key in keys) {
+      final value = district[key];
+      if (value is List) return value;
+    }
+    return const [];
+  }
+
+  num? _seriesValue(
+    Map<String, dynamic> item, {
+    bool predicted = false,
+  }) {
+    final raw = predicted
+        ? (item['predictedCases'] ??
+            item['predicted'] ??
+            item['yhat'] ??
+            item['forecast'])
+        : (item['cases'] ??
+            item['actualCases'] ??
+            item['actual'] ??
+            item['value'] ??
+            item['total']);
+    if (raw is num) return raw;
+    if (raw != null) return num.tryParse(raw.toString());
+    return null;
+  }
+
+  void _mergeMonth(
+    Map<String, Map<String, dynamic>> merged,
+    int year,
+    int month, {
+    num? actual,
+    num? predicted,
+  }) {
+    final key = '$year-$month';
+    merged.putIfAbsent(key, () => {
+          'year': year,
+          'month': month,
+          'hasActual': false,
+          'actual': 0,
+          'predicted': null,
+        });
+    final entry = merged[key]!;
+    if (actual != null) {
+      entry['hasActual'] = true;
+      entry['actual'] = (entry['actual'] as num) + actual;
+    }
+    if (predicted != null) {
+      entry['predicted'] = (entry['predicted'] as num? ?? 0) + predicted;
+    }
+  }
+
+  int _monthsBetween(DateTime from, DateTime to) {
+    return (to.year - from.year) * 12 + (to.month - from.month);
+  }
+
+  List<Map<String, dynamic>> _buildPredictionPoints(
+    List<dynamic> selectedDistricts,
+    int rangeMonths,
+  ) {
+    const months = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+
+    final merged = <String, Map<String, dynamic>>{};
+
+    for (final rawDistrict in selectedDistricts) {
+      if (rawDistrict is! Map) continue;
+      final d = Map<String, dynamic>.from(rawDistrict);
+
+      final history = _predictionSeries(d, [
+        'historicalSeries',
+        'historySeries',
+        'actualSeries',
+        'history',
+      ]);
+      final backtest = _predictionSeries(d, [
+        'backtestSeries',
+        'validationSeries',
+        'inSampleSeries',
+      ]);
+      final forecastList = _predictionSeries(d, [
+        'forecastSeries',
+        'forecast',
+        'predictedSeries',
+        'predictionSeries',
+        'forecasts',
+      ]);
+
+      for (final rawItem in history) {
+        if (rawItem is! Map) continue;
+        final item = Map<String, dynamic>.from(rawItem);
+        final year = (item['year'] as num?)?.toInt();
+        final month = (item['month'] as num?)?.toInt();
+        if (year == null || month == null) continue;
+        _mergeMonth(merged, year, month, actual: _seriesValue(item));
+      }
+
+      for (final rawItem in backtest) {
+        if (rawItem is! Map) continue;
+        final item = Map<String, dynamic>.from(rawItem);
+        final year = (item['year'] as num?)?.toInt();
+        final month = (item['month'] as num?)?.toInt();
+        if (year == null || month == null) continue;
+        _mergeMonth(
+          merged,
+          year,
+          month,
+          predicted: _seriesValue(item, predicted: true),
+        );
+      }
+
+      for (final rawItem in forecastList) {
+        if (rawItem is! Map) continue;
+        final item = Map<String, dynamic>.from(rawItem);
+        final year = (item['year'] as num?)?.toInt();
+        final month = (item['month'] as num?)?.toInt();
+        if (year == null || month == null) continue;
+        _mergeMonth(
+          merged,
+          year,
+          month,
+          predicted: _seriesValue(item, predicted: true),
+        );
+      }
+
+      if (forecastList.isEmpty) {
+        final nextForecast = d['nextForecast'];
+        if (nextForecast is Map) {
+          final item = Map<String, dynamic>.from(nextForecast);
+          final year = (item['year'] as num?)?.toInt();
+          final month = (item['month'] as num?)?.toInt();
+          if (year != null && month != null) {
+            _mergeMonth(
+              merged,
+              year,
+              month,
+              predicted: _seriesValue(item, predicted: true),
+            );
+          }
+        }
+      }
+    }
+
+    final sorted = merged.values.toList()
+      ..sort((a, b) {
+        final da = DateTime(a['year'] as int, a['month'] as int);
+        final db = DateTime(b['year'] as int, b['month'] as int);
+        return da.compareTo(db);
+      });
+
+    if (sorted.isEmpty) return [];
+
+    final lastPredicted = sorted.lastWhere(
+      (e) => e['predicted'] != null,
+      orElse: () => sorted.last,
+    );
+    final lastDate = DateTime(
+      lastPredicted['year'] as int,
+      lastPredicted['month'] as int,
+    );
+
+    return sorted
+        .where((e) {
+          final pointDate = DateTime(e['year'] as int, e['month'] as int);
+          final offset = _monthsBetween(pointDate, lastDate);
+          return offset >= 0 && offset <= rangeMonths;
+        })
+        .map((e) {
+          final hasActual = e['hasActual'] == true;
+          final predicted = e['predicted'];
+          return {
+            'label': '${months[e['month'] - 1]} ${e['year']}',
+            'actual': hasActual ? e['actual'] : null,
+            'predicted': predicted,
+            'isLatestForecast':
+                e['year'] == lastPredicted['year'] &&
+                e['month'] == lastPredicted['month'] &&
+                predicted != null,
+          };
+        })
+        .toList();
+  }
+
+  Future<void> fetchPredictions() async {
+    setState(() => isPredictionLoading = true);
+
+    final district = ManilaGeoService.districtFromUiValue(predictionDistrict);
+
+    try {
+      final result = await ApiService.fetchLatestPredictions(
+        district: predictionDistrict == 'all' ? null : district,
+      );
+
+      if (result['hasPrediction'] != true) {
+        setState(() {
+          predictionData = {'points': []};
+          isPredictionLoading = false;
+        });
+        return;
+      }
+
+      final payload = result['payload'];
+      final districts = payload?['districts'] as List<dynamic>? ?? [];
+
+      if (districts.isEmpty) {
+        setState(() {
+          predictionData = {'points': []};
+          isPredictionLoading = false;
+        });
+        return;
+      }
+
+      final selectedDistricts = predictionDistrict == 'all'
+          ? districts
+          : districts
+              .where((d) => d is Map && d['district'] == district)
+              .toList();
+
+      final rangeMonths = int.parse(predictionRange);
+      final points = _buildPredictionPoints(selectedDistricts, rangeMonths);
+
+      setState(() {
+        predictionData = {'points': points};
+        isPredictionLoading = false;
+      });
+    } catch (_) {
+      setState(() {
+        predictionData = {'points': []};
+        isPredictionLoading = false;
+      });
+    }
+  }
+
   Future<void> fetchTrends() async {
     setState(() => isTrendsLoading = true);
 
     final result = await ApiService.getOfficialAnalytics(
       year: trendsYear,
       caseClassification: trendsClassification,
+      includeReports:
+          trendsClassification == 'all' || trendsClassification == 'suspected',
     );
 
     setState(() {
@@ -148,6 +388,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       month: districtMonth,
       year: districtYear,
       caseClassification: districtClassification,
+      includeReports: districtClassification == 'all' ||
+          districtClassification == 'suspected',
     );
 
     setState(() {
@@ -163,6 +405,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       month: diseaseMonth,
       year: diseaseYear,
       caseClassification: diseaseClassification,
+      includeReports: diseaseClassification == 'all' ||
+          diseaseClassification == 'suspected',
     );
 
     setState(() {
@@ -176,9 +420,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
-        ),
         automaticallyImplyLeading: false,
         surfaceTintColor: const Color(0xFFF9FAFB),
         backgroundColor: Colors.white,
@@ -195,14 +436,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Statistics & Forecast',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: const Color(0xFF4B5563),
-              ),
-            ),
           ],
         ),
       ),
@@ -210,14 +443,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: showStatistics ? statisticsView() : forecastView(),
+            child: analyticsView(),
           ),
         ),
       ),
     );
   }
 
-  Widget statisticsView() {
+  Widget analyticsView() {
     final growth = overviewData?['growth'];
 
     final growthValue = double.tryParse(growth.toString()) ?? 0.0;
@@ -232,57 +465,77 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Column(
       children: [
         /// KPI CARDS
-        Row(
-          children: [
-            Expanded(
-              child: _statCard(
-                bgColor: Colors.white,
-                textColor: Colors.black,
-                icon: LucideIcons.activity,
-                title: "Total Cases",
-                value: overviewData?['totalCases']?.toString() ?? '0',
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 160,
+                height: 160,
+                child: _kpiCard(
+                  colorBar: const Color(0xFF34D399),
+                  icon: LucideIcons.activity,
+                  iconBg: const Color(0xFFD1FAE5),
+                  iconColor: const Color(0xFF10B981),
+                  title: "Total Cases",
+                  value: overviewData?['totalCases']?.toString() ?? '0',
+                  subtitleWidget: Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Color.lerp(growthColor, Colors.white, 0.85),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.trending_down, size: 14, color: growthColor),
+                        SizedBox(width: 4),
+                        Text(
+                          growthText,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: growthColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _statCard(
-                bgColor: Colors.white,
-                textColor: Colors.black,
-                icon: LucideIcons.mapPin,
-                title: "Top District",
-                subtitle: 'Highest case volume',
-                value: overviewData?['topDistrict'] ?? 'N/A',
+              SizedBox(width: 12),
+              SizedBox(
+                width: 160,
+                height: 160,
+                child: _kpiCard(
+                  colorBar: const Color(0xFFF97316),
+                  icon: LucideIcons.mapPin,
+                  iconBg: const Color(0xFFFFF7ED),
+                  iconColor: const Color(0xFFF97316),
+                  title: "Top District",
+                  value: overviewData?['topDistrict'] ?? 'N/A',
+                  valueFontSize: 16,
+                  subtitleText: "Highest case volume of all",
+                )
               ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        Row(
-          children: [
-            Expanded(
-              child: _statCard(
-                bgColor: Colors.white,
-                textColor: Colors.black,
-                icon: LucideIcons.triangleAlert,
-                title: "Growth",
-                subtitle: 'vs last year',
-                value: growthText,
+              SizedBox(width: 12),
+              SizedBox(
+                width: 160,
+                height: 160,
+                child: _kpiCard(
+                  colorBar: const Color(0xFFA78BFA),
+                  icon: LucideIcons.stethoscope,
+                  iconBg: const Color(0xFFF5F3FF),
+                  iconColor: const Color(0xFFA78BFA),
+                  title: "Top Disease",
+                  value: overviewData?['topDisease'] ?? 'N/A',
+                  valueFontSize: 16,
+                  subtitleText: "Most frequent diagnosis",
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _statCard(
-                bgColor: Colors.white,
-                textColor: Colors.black,
-                icon: LucideIcons.stethoscope,
-                title: "Top Disease",
-                subtitle: 'Most frequent diagnosis',
-                value: overviewData?['topDisease'] ?? 'N/A',
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
 
         const SizedBox(height: 16),
@@ -304,275 +557,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget forecastView() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF2563EB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    LucideIcons.sparkles,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Monthly Forecast",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "May 1-31, 2026",
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Location",
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        /// STATS
-        Row(
-          children: [
-            Expanded(
-              child: _statCard(
-                bgColor: Color(0xFF059669),
-                textColor: Color(0xFFD1FAE5),
-                icon: LucideIcons.shield,
-                title: "Avg Official",
-                value: "44",
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _statCard(
-                bgColor: Color(0xFFEA580C),
-                textColor: Color(0xFFFFEDD5),
-                icon: LucideIcons.fileText,
-                title: "Avg Reports",
-                value: "76",
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        const SizedBox(height: 20),
-
-        /// AI INSIGHT
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.blue.shade200),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF2563EB),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.psychology,
-                  size: 16,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "Official cases show decreasing trend, while citizen reports also show a decreasing pattern. Shaded areas represent 95% confidence intervals.",
-                  style: GoogleFonts.inter(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        /// ABOUT FORECAST
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF2563EB),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.lightbulb,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    "About Forecasting",
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              _infoBox(
-                "The forecast shows predicted cases for the next month with confidence intervals.",
-              ),
-
-              const SizedBox(height: 8),
-
-              _infoBox(
-                "Official cases are verified, while citizen reports help detect outbreaks faster.",
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget segmentedToggle({
-    required Color color,
-    IconData? leftIcon,
-    IconData? rightIcon,
-    required String leftLabel,
-    required String rightLabel,
-    required bool isLeftSelected,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: segButton(
-              color: color,
-              icon: leftIcon,
-              label: leftLabel,
-              selected: isLeftSelected,
-              onTap: () => onChanged(true),
-            ),
-          ),
-          Expanded(
-            child: segButton(
-              color: color,
-              icon: rightIcon,
-              label: rightLabel,
-              selected: !isLeftSelected,
-              onTap: () => onChanged(false),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget segButton({
-    required Color color,
-    required String label,
-    IconData? icon,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: selected ? Colors.white : Colors.grey.shade700,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : Colors.grey.shade700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget chartLoading() {
     return SizedBox(
       height: 180,
@@ -589,157 +573,66 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget emptyChartWrapper({
-    required Widget chart,
-    required bool isEmpty,
-    String message = 'No data for selected filters',
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(height: 180, child: chart),
-
-        if (isEmpty)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.databaseZap,
-                size: 20,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                message,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget noDataCard({String? chartType}) {
-    IconData? icon;
-
-    switch (chartType) {
-      case 'line':
-        icon = LucideIcons.chartSpline;
-      case 'bar':
-        icon = LucideIcons.chartColumnBig;
-      case 'pie':
-        icon = LucideIcons.chartPie;
-      default:
-        icon = Icons.insert_chart_outlined;
-    }
-
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 40, color: Colors.grey.shade400),
-          const SizedBox(height: 8),
-          Text(
-            'No data available',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget predictionChart() {
-    double minY = 0;
+    const minY = 0.0;
 
-    final trend = trendsData?['trendData'] as List<dynamic>? ?? [];
+    final points = predictionData?['points'] as List<dynamic>? ?? [];
+    final labels = points
+        .map((p) => (p['label'] ?? '').toString())
+        .toList();
 
-    final bool isAllYears = trendsYear == 'all';
-    final currentYear = DateTime.now().year;
-    final currentMonth = DateTime.now().month;
+    List<FlSpot> actualSpots = [];
+    List<FlSpot> predictedSpots = [];
 
-    List<double> values = [];
-    List<String> labels = [];
+    for (var i = 0; i < points.length; i++) {
+      final point = points[i];
+      final actual = point['actual'];
+      final predicted = point['predicted'];
 
-    if (isAllYears) {
-      for (final item in trend) {
-        values.add((item['total'] as num).toDouble());
-        labels.add(item['_id'].toString()); // year label
+      if (actual != null) {
+        actualSpots.add(FlSpot(i.toDouble(), (actual as num).toDouble()));
       }
-    } else {
-      int maxMonth = 12;
-
-      if (int.parse(trendsYear) == currentYear) {
-        maxMonth = currentMonth; // only available months
+      if (predicted != null) {
+        predictedSpots.add(
+          FlSpot(i.toDouble(), (predicted as num).toDouble()),
+        );
       }
-
-      values = List<double>.filled(maxMonth, 0);
-
-      for (final item in trend) {
-        final month = item['_id'] as int;
-        final total = (item['total'] as num).toDouble();
-
-        if (month <= maxMonth) {
-          values[month - 1] = total;
-        }
-      }
-
-      labels = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ].sublist(0, maxMonth);
     }
 
-    List<FlSpot> getTrendSpots() {
-      return List.generate(
-        values.length,
-        (index) => FlSpot(index.toDouble(), values[index]),
-      );
-    }
-
-    double getTrendMaxY() {
-      if (trend.isEmpty) return 100;
-
-      final max = values.isEmpty ? 100 : values.reduce((a, b) => a > b ? a : b);
-
-      return getNiceMaxY(max.toDouble());
-    }
-
-    final maxY = getTrendMaxY();
+    final allValues = [
+      ...actualSpots.map((s) => s.y),
+      ...predictedSpots.map((s) => s.y),
+    ];
+    final maxValue = allValues.isEmpty
+        ? 10.0
+        : allValues.reduce((a, b) => a > b ? a : b);
+    final maxY = getNiceMaxY(maxValue);
     final interval = getNiceInterval(maxY);
 
-    LineChartBarData line(List<FlSpot> data) {
+    LineChartBarData line(
+      List<FlSpot> data, {
+      required Color color,
+      bool dashed = false,
+    }) {
       return LineChartBarData(
         spots: data,
         isCurved: true,
         curveSmoothness: 0.35,
-        color: Colors.blue.withValues(alpha: 0.9),
-        barWidth: 3,
+        color: color,
+        barWidth: 2.5,
         isStrokeCapRound: true,
-        dotData: FlDotData(show: true),
+        dotData: FlDotData(
+          show: true,
+          getDotPainter: (spot, percent, barData, index) {
+            return FlDotCirclePainter(
+              radius: 2, // 👈 smaller = thinner points
+              color: Colors.white,
+              strokeWidth: 2,
+              strokeColor: color
+            );
+          },
+        ),
+        dashArray: dashed ? [4, 6] : null,
       );
     }
 
@@ -767,13 +660,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: Color.lerp(Color(0xFF3b82f6), Colors.white, 0.85),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       LucideIcons.trendingUpDown,
                       size: 12,
-                      color: Colors.white,
+                      color: Color(0xFF3b82f6),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -801,7 +694,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   items: districtItems,
                   onChanged: (value) {
                     setState(() => predictionDistrict = value!);
-                    fetchTrends();
+                    fetchPredictions();
                   },
                 ),
               ),
@@ -813,7 +706,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   items: rangeItems,
                   onChanged: (value) {
                     setState(() => predictionRange = value!);
-                    fetchTrends();
+                    fetchPredictions();
                   },
                 ),
               ),
@@ -823,7 +716,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 24),
 
           /// Chart
-          isTrendsLoading
+          isPredictionLoading
               ? chartLoading()
               : Container(
                   height: 180,
@@ -831,7 +724,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   child: LineChart(
                     LineChartData(
                       minY: minY,
-                      maxY: values.every((e) => e == 0) ? 10 : maxY,
+                      maxY: allValues.isEmpty || allValues.every((e) => e == 0)
+                          ? 10
+                          : maxY,
 
                       gridData: FlGridData(
                         show: true,
@@ -861,20 +756,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            interval: 1,
+                            interval: labels.length > 12 ? 2 : 1,
                             reservedSize: 32,
                             getTitlesWidget: (value, _) {
                               final index = value.toInt();
 
                               if (index >= 0 && index < labels.length) {
+                                final parts = labels[index].split(' ');
+
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 6),
-                                  child: Text(
-                                    labels[index],
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      color: Colors.grey,
-                                    ),
+                                  child: Column(
+                                    children: [
+                                      Text(parts[0], style: GoogleFonts.inter(fontSize: 9)),
+                                      Text(parts[1], style: GoogleFonts.inter(fontSize: 8, color: Colors.grey)),
+                                    ],
                                   ),
                                 );
                               }
@@ -906,64 +802,68 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
 
                       lineBarsData: [
-                        line(getTrendSpots()),
-                        line(getTrendSpots()),
+                        if (actualSpots.isNotEmpty)
+                          line(actualSpots, color: const Color(0xFF10B981)),
+                        if (predictedSpots.isNotEmpty)
+                          line(
+                            predictedSpots,
+                            color: Color(0xFF3b82f6),
+                            dashed: true,
+                          ),
                       ],
                     ),
                   ),
                 ),
-          if (!isTrendsLoading) ...[
-            SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 9,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
+          SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    const SizedBox(width: 6),
-                    SizedBox(width: 6),
-                    Text(
-                      'Actual',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
+                  ),
+                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
+                  Text(
+                    'Actual',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 9,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF3b82f6),
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    const SizedBox(width: 6),
-                    SizedBox(width: 6),
-                    Text(
-                      'Prediction',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
+                  ),
+                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
+                  Text(
+                    'Prediction',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1043,10 +943,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         spots: data,
         isCurved: true,
         curveSmoothness: 0.35,
-        color: Colors.blue.withValues(alpha: 0.9),
-        barWidth: 3,
+        color: const Color(0xFF10B981),
+        barWidth: 2.5,
         isStrokeCapRound: true,
-        dotData: FlDotData(show: true),
+        dotData: FlDotData(
+          show: true,
+          getDotPainter: (spot, percent, barData, index) {
+            return FlDotCirclePainter(
+              radius: 2, // 👈 smaller = thinner points
+              color: Colors.white,
+              strokeWidth: 2,
+              strokeColor: const Color(0xFF10B981)
+            );
+          },
+        ),
       );
     }
 
@@ -1074,13 +984,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: const Color(0xFFD1FAE5),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       LucideIcons.activity,
                       size: 12,
-                      color: Colors.white,
+                      color: const Color(0xFF10B981),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1250,6 +1160,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     final interval = getNiceInterval(maxValue.toDouble());
 
+    final List<Color> barColors = [
+      Color(0xFF3B82F6), // blue
+      Color(0xFF10B981), // green
+      Color(0xFFF59E0B), // amber
+      Color(0xFFEF4444), // red
+      Color(0xFF8B5CF6), // purple
+      Color(0xFF06B6D4), // cyan
+    ];
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1274,13 +1193,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: const Color(0xFFFFF7ED),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       LucideIcons.mapPin,
                       size: 12,
-                      color: Colors.white,
+                      color: const Color(0xFFF97316),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1432,11 +1351,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           barRods: [
                             BarChartRodData(
                               toY: values[index],
-                              width: 32,
+                              width: 40,
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(8),
                               ),
-                              color: Colors.blue,
+                              color: barColors[index % barColors.length],
                             ),
                           ],
                         );
@@ -1492,13 +1411,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: const Color(0xFFF5F3FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      LucideIcons.layers,
+                      LucideIcons.stethoscope,
                       size: 12,
-                      color: Colors.white,
+                      color: const Color(0xFFA78BFA),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1590,7 +1509,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 color: colors[index % colors.length],
                                 title: '$percent%',
                                 radius: 80,
-                                titleStyle: const TextStyle(
+                                titleStyle: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -1732,125 +1651,107 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _statCard({
-    required Color bgColor,
-    required Color textColor,
+  Widget _kpiCard({
+    required Color colorBar,
     required IconData icon,
-    required String title,
-    String? subtitle,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: textColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 12, color: textColor),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                title,
-                style: GoogleFonts.inter(color: textColor, fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              color: textColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            subtitle ?? '',
-            style: GoogleFonts.inter(color: textColor, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget statOverviewCard({
-    required Color color,
-    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
     required String title,
     required String value,
-    Color valueColor = const Color(0xFF111827),
+    String? subtitleText,
+    Widget? subtitleWidget,
+    double valueFontSize = 20,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
+            height: 4,
+            color: colorBar
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: valueColor,
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(isOverviewLoading)
+                  SizedBox(
+                    height: 130,
+                    child: Center(
+                      child: SizedBox(
+                        width: 15,
+                        height: 15,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  )
+                else if(!isOverviewLoading)...[
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, size: 18, color: iconColor),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: valueFontSize,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (subtitleWidget != null)
+                    subtitleWidget
+                  else if (subtitleText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        subtitleText,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ]
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _infoBox(String text) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Text(text, style: GoogleFonts.inter(fontSize: 12)),
     );
   }
 }

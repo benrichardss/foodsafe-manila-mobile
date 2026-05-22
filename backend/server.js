@@ -5,6 +5,9 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const reportRoutes = require('./routes/reports');
 const officialCaseRoutes = require('./routes/officialCase');
+const predictionRoutes = require('./routes/predictionRoutes');
+const riskRoutes = require('./routes/riskRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -17,6 +20,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/official-cases', officialCaseRoutes);
+app.use('/api/predictions', predictionRoutes);
+app.use('/api/risk', riskRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

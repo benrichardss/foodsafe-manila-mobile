@@ -164,7 +164,14 @@ class _HeaderState extends State<Header> {
 }
 
 class DashboardSummaryCard extends StatelessWidget {
-  const DashboardSummaryCard({super.key});
+  final Map<String, dynamic>? data;
+  final bool isLoading;
+
+  const DashboardSummaryCard({
+    super.key,
+    this.data,
+    this.isLoading = false,
+  });
 
   String _getCurrentYear() {
     return DateTime.now().year.toString();
@@ -181,6 +188,21 @@ class DashboardSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentYear = _getCurrentYear();
     final dateRange = _getDateRange();
+
+    if (isLoading) {
+      return const _Card(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    final totalCases = data?['totalCases']?.toString() ?? '0';
+    final topDisease = data?['topDisease']?.toString() ?? 'N/A';
+    final highRiskDistricts = data?['highRiskDistricts']?.toString() ?? '0';
 
     return _Card(
       child: Column(
@@ -227,8 +249,8 @@ class DashboardSummaryCard extends StatelessWidget {
                     icon: Icons.monitor_heart_outlined,
                     iconColor: const Color(0xFFDC2626),
                     label: "Total Cases",
-                    value: "889",
-                    sub: dateRange, // dynamic range here
+                    value: totalCases,
+                    sub: dateRange,
                     valueColor: const Color(0xFFB91C1C),
                   ),
                 ),
@@ -250,7 +272,7 @@ class DashboardSummaryCard extends StatelessWidget {
                     icon: Icons.groups_2_outlined,
                     iconColor: const Color(0xFF7C3AED),
                     label: "Most Common",
-                    value: "Food Poisoning",
+                    value: topDisease,
                     sub: "Illness Type",
                     valueColor: const Color(0xFF6D28D9),
                     isSmallValue: true,
@@ -264,8 +286,8 @@ class DashboardSummaryCard extends StatelessWidget {
                     icon: Icons.warning_amber_rounded,
                     iconColor: const Color(0xFFD97706),
                     label: "High Risk",
-                    value: "2",
-                    sub: "Districts", // keep static if it's categorical
+                    value: highRiskDistricts,
+                    sub: "Districts",
                     valueColor: const Color(0xFFB45309),
                   ),
                 ),
@@ -472,10 +494,33 @@ class _DotLabel extends StatelessWidget {
 /* ---------------- Current Risk ---------------- */
 
 class CurrentRiskCard extends StatelessWidget {
-  const CurrentRiskCard({super.key});
+  final Map<String, dynamic>? data;
+  final bool isLoading;
+
+  const CurrentRiskCard({
+    super.key,
+    this.data,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const _Card(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    final high = data?['highRiskDistricts']?.toString() ?? '0';
+    final moderate = data?['moderateRiskDistricts']?.toString() ?? '0';
+    final low = data?['lowRiskDistricts']?.toString() ?? '0';
+    final suspected = data?['suspectedReports']?.toString() ?? '0';
+
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,17 +533,21 @@ class CurrentRiskCard extends StatelessWidget {
                   style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
+              Text(
+                '$suspected suspected',
+                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 14),
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: _RiskMini(
                   icon: Icons.warning_amber_rounded,
                   bg: Color(0xFFFEE2E2),
                   fg: Color(0xFFDC2626),
-                  value: "3",
+                  value: high,
                   label: "High Risk",
                 ),
               ),
@@ -507,7 +556,7 @@ class CurrentRiskCard extends StatelessWidget {
                   icon: Icons.trending_up_rounded,
                   bg: Color(0xFFFEF3C7),
                   fg: Color(0xFFD97706),
-                  value: "5",
+                  value: moderate,
                   label: "Moderate",
                 ),
               ),
@@ -516,7 +565,7 @@ class CurrentRiskCard extends StatelessWidget {
                   icon: Icons.shield_outlined,
                   bg: Color(0xFFDCFCE7),
                   fg: Color(0xFF16A34A),
-                  value: "12",
+                  value: low,
                   label: "Low Risk",
                 ),
               ),

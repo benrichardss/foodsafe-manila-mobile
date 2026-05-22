@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
+import '../services/risk_alert_service.dart';
 import '../services/session.dart';
 import 'personal_info_screen.dart';
 
@@ -22,6 +23,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    RiskAlertService.instance.startMonitoring();
+  }
+
+  @override
+  void dispose() {
+    RiskAlertService.instance.stopMonitoring();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
